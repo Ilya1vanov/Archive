@@ -1,8 +1,10 @@
 @XmlSchema(
-        namespace = "https://www.w3schools.com",
+        namespace = "https://www.ilya.ivanov.com/archive/client",
         elementFormDefault = XmlNsForm.QUALIFIED,
+        location = "https://www.ilya.ivanov.com/archive/client xsd/client.xsd",
         xmlns = {
-                @XmlNs(prefix = "xsi", namespaceURI = "http://www.w3.org/2001/XMLSchema-instance")
+                @XmlNs(prefix = "xsi", namespaceURI = "http://www.w3.org/2001/XMLSchema-instance"),
+                @XmlNs(prefix = "", namespaceURI = "https://www.ilya.ivanov.com/archive/client")
         })
 package client;
 

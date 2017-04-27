@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="https://www.ilya.ivanov.com/archive/employee"
+           elementFormDefault="qualified" >
+
+    <!--type definitions-->
+    <xs:simpleType name="idType">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="nameType">
+        <xs:restriction base="xs:normalizedString">
+            <xs:pattern value="[A-Z][a-z]+"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="sexType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="male"/>
+            <xs:enumeration value="female"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:group name="fullName">
+        <xs:sequence>
+            <xs:element name="firstName" type="nameType"/>
+            <xs:element name="middleName" type="nameType"/>
+            <xs:element name="lastName" type="nameType"/>
+        </xs:sequence>
+    </xs:group>
+
+    <xs:element name="employee">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:group ref="fullName"/>
+                <xs:element name="sex" type="sexType"/>
+            </xs:sequence>
+            <xs:attribute name="id" type="idType" use="optional"/>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

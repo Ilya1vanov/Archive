@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dataset>
+
+    <users id="1" login="vasya" password="vasya" permissions="21"/>
+    <users id="1" login="ilya" password="ilya"  permissions="55"/>
+    <users id="1" login="tanya" password="tanya" permissions="1"/>
+    <users id="1" login="ira" password="ira" permissions="5"/>
+
+</dataset>

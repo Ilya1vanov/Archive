@@ -1,61 +1,48 @@
 package server;
 
-import jaxb.LogValidationEventHandler;
 import org.apache.log4j.Logger;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-
-import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import java.io.File;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ImportResource;
 
 /**
  * @author Ilya Ivanov
  */
-@XmlRootElement
+@ImportResource("classpath:spring/server-context.xml")
+@SpringBootApplication
 public class Server implements Runnable {
     /** log4j logger */
     private static final Logger log = Logger.getLogger(Server.class);
 
     /** connection port */
-    @XmlAttribute(name = "port", required = true)
-    private int PORT;
+    private int port;
+
+    /** requested maximum length of the queue of incoming connections */
+    private int backlog;
+
+    public Server(int port, int backlog) {
+        this.port = port;
+        this.backlog = backlog;
+    }
 
     @Override
     public void run() {
+        System.out.println("server run");
 
     }
 
     public static void main(String[] args) {
-        Server server = null;
-        try {
-            File schema = new File("./src/main/resources/xml/server.xsd");
-            // create XML schema for validation
-            SchemaFactory sf = SchemaFactory.newInstance( XMLConstants.W3C_XML_SCHEMA_NS_URI );
-            Schema XMLSchema = sf.newSchema( schema );
+        final ConfigurableApplicationContext context =
+                SpringApplication.run(Server.class);
+    }
 
-            // create JAXB context and initializing Marshaller
-            JAXBContext jaxbContext = JAXBContext.newInstance(Server.class);
-            Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-            jaxbUnmarshaller.setSchema(XMLSchema);
-            jaxbUnmarshaller.setEventHandler(new LogValidationEventHandler());
-
-            // specify the location and name of xml file to be read
-            File XMLFile = new File("./src/main/resources/xml/server.xml");
-
-            // this will create Java object - port from the XML file
-            server = (Server) jaxbUnmarshaller.unmarshal(XMLFile);
-        } catch (JAXBException | SAXException e) {
-            log.fatal("Unable to instantiate server", e);
-            throw new RuntimeException("Unable to instantiate server", e);
-        }
-        server.run();
+    @Bean
+    public CommandLineRunner demo(Server server) {
+        return (args) -> {
+            server.run();
+        };
     }
 }
