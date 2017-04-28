@@ -12,6 +12,7 @@ import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
+import server.springdata.config.TestConfig;
 
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {TestConfig.class})
 @RunWith(SpringJUnit4ClassRunner.class)

@@ -27,8 +27,12 @@ import static org.springframework.context.annotation.FilterType.ANNOTATION;
 @EnableJpaRepositories("server.springdata.repository")
 @PropertySource("classpath:spring/db.properties")
 public class AppConfig {
+    private final Environment env;
+
     @Autowired
-    private Environment env;
+    public AppConfig(Environment env) {
+        this.env = env;
+    }
 
     @Bean
     public DataSource dataSource() {

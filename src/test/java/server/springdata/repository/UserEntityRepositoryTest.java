@@ -2,7 +2,6 @@ package server.springdata.repository;
 
 import com.github.springtestdbunit.DbUnitTestExecutionListener;
 import com.github.springtestdbunit.annotation.DatabaseSetup;
-import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +13,7 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.transaction.annotation.Transactional;
+import server.springdata.config.TestConfig;
 import server.springdata.model.UserEntity;
 
 import java.util.List;
@@ -31,14 +31,6 @@ import org.fest.assertions.Assertions;
 public class UserEntityRepositoryTest {
     @Autowired
     private UserEntityRepository userEntityRepository;
-
-//    @BeforeClass
-//    public static void setUp() {
-//        userEntityRepository.save(new UserEntity("nikita", "nikita", 1));
-//        userEntityRepository.save(new UserEntity("tanya", "tanya", 5));
-//        userEntityRepository.save(new UserEntity("ira", "ira", 21));
-//        userEntityRepository.save(new UserEntity("ilya", "ilya", 55));
-//    }
 
     @Test
     public void testFindAll() {
@@ -61,7 +53,6 @@ public class UserEntityRepositoryTest {
 
         assertThat(user, is(savedUser));
         assertThat(userFromDb.getId(), is(user.getId()));
-        userEntityRepository.delete(userFromDb);
     }
 
     @Test
@@ -77,7 +68,10 @@ public class UserEntityRepositoryTest {
 
     @Test
     public void findByLoginAndPassword() {
-
+        final List<UserEntity> entities = userEntityRepository.findByLoginAndPassword("ilya", "ilya");
+        Assertions.assertThat(entities).isNotNull().isNotEmpty();
+        assertThat(entities.size(), is(1));
+        assertThat(entities.get(0).getLogin(), is("ilya"));
+        assertThat(entities.get(0).getPassword(), is("ilya"));
     }
-
 }
