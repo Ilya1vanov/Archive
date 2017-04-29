@@ -67,11 +67,19 @@ public class UserEntityRepositoryTest {
     }
 
     @Test
-    public void findByLoginAndPassword() {
+    public void testFindByLoginAndPassword() {
         final List<UserEntity> entities = userEntityRepository.findByLoginAndPassword("ilya", "ilya");
         Assertions.assertThat(entities).isNotNull().isNotEmpty();
         assertThat(entities.size(), is(1));
         assertThat(entities.get(0).getLogin(), is("ilya"));
         assertThat(entities.get(0).getPassword(), is("ilya"));
+    }
+
+    @Test
+    public void testCountByLogin() {
+        final long ilya = userEntityRepository.countByLogin("ilya");
+        final long nonexistent = userEntityRepository.countByLogin("nonexistent login");
+        assertThat(ilya, is(1L));
+        assertThat(nonexistent, is(0L));
     }
 }

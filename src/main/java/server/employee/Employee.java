@@ -27,6 +27,12 @@ public class Employee {
     @XmlElement
     private Sex sex;
 
+    @XmlElement
+    private String workplace;
+
+    @XmlElement
+    private int experience;
+
     public Long getId() {
         return id;
     }

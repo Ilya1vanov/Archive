@@ -51,8 +51,11 @@ public class Server implements Runnable {
         return (args) -> {
             repository.save(new UserEntity("sdkjjf", "sdfa"));
             final List<UserEntity> all = repository.findAll();
-            System.out.println(all);
+            log.debug(all);
             server.run();
+
+
+
         };
     }
 }

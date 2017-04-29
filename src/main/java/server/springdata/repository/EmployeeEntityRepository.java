@@ -9,4 +9,5 @@ import server.springdata.model.EmployeeEntity;
  */
 @Repository
 public interface EmployeeEntityRepository extends CrudRepository<EmployeeEntity, Long> {
+
 }

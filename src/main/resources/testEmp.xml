@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<employee   xmlns="https://www.ilya.ivanov.com/archive/employee"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="https://www.ilya.ivanov.com/archive/employee xsd/employee.xsd">
+    <firstName>Ilya</firstName>
+    <middleName>Petrovich</middleName>
+    <lastName>Ivanov</lastName>
+    <sex>male</sex>
+    <workplace>bsuir</workplace>
+    <experience timeUnit="year">2</experience>
+</employee>

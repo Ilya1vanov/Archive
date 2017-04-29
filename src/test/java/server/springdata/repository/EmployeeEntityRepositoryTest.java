@@ -1,7 +1,7 @@
 package server.springdata.repository;
 
-//import com.github.springtestdbunit.DbUnitTestExecutionListener;
-//import com.github.springtestdbunit.annotation.DatabaseSetup;
+import com.github.springtestdbunit.DbUnitTestExecutionListener;
+import com.github.springtestdbunit.annotation.DatabaseSetup;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +17,8 @@ import server.springdata.config.TestConfig;
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {TestConfig.class})
 @RunWith(SpringJUnit4ClassRunner.class)
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class, DirtiesContextTestExecutionListener.class,
-        TransactionalTestExecutionListener.class/*, DbUnitTestExecutionListener.class*/})
-//@DatabaseSetup("classpath:META-INF/database.xml")
+        TransactionalTestExecutionListener.class, DbUnitTestExecutionListener.class})
+@DatabaseSetup("classpath:META-INF/database.xml")
 public class EmployeeEntityRepositoryTest {
     @Autowired
     private EmployeeEntityRepository employeeEntityRepository;

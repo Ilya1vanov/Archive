@@ -5,7 +5,7 @@
            elementFormDefault="qualified" >
 
     <!--type definitions-->
-    <xs:simpleType name="idType">
+    <xs:simpleType name="uIntType">
         <xs:restriction base="xs:int">
             <xs:minInclusive value="0"/>
         </xs:restriction>
@@ -22,21 +22,31 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:group name="fullName">
-        <xs:sequence>
-            <xs:element name="firstName" type="nameType"/>
-            <xs:element name="middleName" type="nameType"/>
-            <xs:element name="lastName" type="nameType"/>
-        </xs:sequence>
-    </xs:group>
+    <xs:simpleType name="timeUnitType">
+        <xs:restriction>
+            <xs:enumeration value="month"/>
+            <xs:enumeration value="year"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:complexType name="experienceType">
+        <xs:all>
+            <xs:element type="uIntType" name="experience"/>
+        </xs:all>
+        <xs:attribute name="timeUnit" type="timeUnitType"/>
+    </xs:complexType>
 
     <xs:element name="employee">
         <xs:complexType>
             <xs:sequence>
-                <xs:group ref="fullName"/>
+                <xs:element name="firstName" type="nameType"/>
+                <xs:element name="middleName" type="nameType"/>
+                <xs:element name="lastName" type="nameType"/>
                 <xs:element name="sex" type="sexType"/>
+                <xs:element type="xs:string" name="workplace"/>
+                <xs:element type="experienceType" name="experience"/>
             </xs:sequence>
-            <xs:attribute name="id" type="idType" use="optional"/>
+            <xs:attribute name="id" type="uIntType" use="optional"/>
         </xs:complexType>
     </xs:element>
 </xs:schema>

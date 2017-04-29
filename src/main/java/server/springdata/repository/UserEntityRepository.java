@@ -11,8 +11,9 @@ import java.util.List;
  */
 @Repository
 public interface UserEntityRepository extends CrudRepository<UserEntity, Long> {
-//    Boolean countByLogin(String login);
     List<UserEntity> findAll();
 
     List<UserEntity> findByLoginAndPassword(String login, String password);
+
+    long countByLogin(String login);
 }

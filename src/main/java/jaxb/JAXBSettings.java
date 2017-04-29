@@ -6,10 +6,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.*;
 import javax.xml.bind.annotation.XmlSchema;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -101,5 +98,23 @@ public class JAXBSettings {
         marshaller.setEventHandler(new LogValidationEventHandler());
 
         marshaller.marshal(obj, xmlFile);
+    }
+
+    private static class LogValidationEventHandler implements ValidationEventHandler {
+        public boolean handleEvent(ValidationEvent event) {
+            log.error("\nEVENT");
+            log.error("SEVERITY:  " + event.getSeverity());
+            log.error("MESSAGE:  " + event.getMessage());
+            log.error("LINKED EXCEPTION:  " + event.getLinkedException());
+            log.error("LOCATOR");
+            log.error("    LINE NUMBER:  " + event.getLocator().getLineNumber());
+            log.error("    COLUMN NUMBER:  " + event.getLocator().getColumnNumber());
+            log.error("    OFFSET:  " + event.getLocator().getOffset());
+            log.error("    OBJECT:  " + event.getLocator().getObject());
+            log.error("    NODE:  " + event.getLocator().getNode());
+            log.error("    URL:  " + event.getLocator().getURL());
+            return true;
+        }
+
     }
 }
