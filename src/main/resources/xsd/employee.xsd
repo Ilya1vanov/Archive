@@ -2,7 +2,8 @@
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            targetNamespace="https://www.ilya.ivanov.com/archive/employee"
-           elementFormDefault="qualified" >
+           elementFormDefault="qualified"
+           xmlns:e="https://www.ilya.ivanov.com/archive/employee">
 
     <!--type definitions-->
     <xs:simpleType name="uIntType">
@@ -23,30 +24,30 @@
     </xs:simpleType>
 
     <xs:simpleType name="timeUnitType">
-        <xs:restriction>
+        <xs:restriction base="xs:string">
             <xs:enumeration value="month"/>
             <xs:enumeration value="year"/>
         </xs:restriction>
     </xs:simpleType>
-    
+
     <xs:complexType name="experienceType">
         <xs:all>
-            <xs:element type="uIntType" name="experience"/>
+            <xs:element type="e:uIntType" name="experience"/>
         </xs:all>
-        <xs:attribute name="timeUnit" type="timeUnitType"/>
+        <xs:attribute name="timeUnit" type="e:timeUnitType"/>
     </xs:complexType>
 
     <xs:element name="employee">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="firstName" type="nameType"/>
-                <xs:element name="middleName" type="nameType"/>
-                <xs:element name="lastName" type="nameType"/>
-                <xs:element name="sex" type="sexType"/>
-                <xs:element type="xs:string" name="workplace"/>
-                <xs:element type="experienceType" name="experience"/>
+                <xs:element name="firstName" type="e:nameType"/>
+                <xs:element name="middleName" type="e:nameType"/>
+                <xs:element name="lastName" type="e:nameType"/>
+                <xs:element name="sex" type="e:sexType"/>
+                <xs:element name="workplace" type="xs:string"/>
+                <xs:element name="experience" type="e:experienceType"/>
             </xs:sequence>
-            <xs:attribute name="id" type="uIntType" use="optional"/>
+            <xs:attribute name="id" type="e:uIntType" use="optional"/>
         </xs:complexType>
     </xs:element>
 </xs:schema>

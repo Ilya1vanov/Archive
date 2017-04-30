@@ -8,4 +8,8 @@
         <constructor-arg name="backlog" type="int" value="50"/>
     </bean>
 
+    <bean id="xmlValidator" class="server.spring.rest.parsers.XMLValidator">
+        <constructor-arg name="schema" type="java.io.File" value="classpath:xsd/employee.xsd"/>
+    </bean>
+
 </beans>

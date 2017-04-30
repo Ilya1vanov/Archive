@@ -1,48 +1,23 @@
 package client;
 
-import client.springwebsock.MyWebSocketHandler;
-import org.apache.http.client.methods.HttpGet;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.jndi.toolkit.url.Uri;
 import org.apache.log4j.Logger;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.WebClientAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration;
-import org.springframework.boot.autoconfigure.webservices.WebServicesAutoConfiguration;
-import org.springframework.boot.autoconfigure.websocket.WebSocketAutoConfiguration;
-import org.springframework.boot.autoconfigure.websocket.WebSocketMessagingAutoConfiguration;
-import org.springframework.boot.context.TypeExcludeFilter;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.context.annotation.ImportResource;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.SimpMessageType;
-import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
-import org.springframework.web.socket.WebSocketSession;
-import org.springframework.web.socket.client.standard.StandardWebSocketClient;
-import org.springframework.web.socket.sockjs.client.RestTemplateXhrTransport;
-import org.springframework.web.socket.sockjs.client.SockJsClient;
-import org.springframework.web.socket.sockjs.client.Transport;
-import org.springframework.web.socket.sockjs.client.WebSocketTransport;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestTemplate;
+import server.spring.data.model.UserEntity;
+import server.spring.rest.protocol.RequestEntity;
+import server.spring.rest.protocol.ResponseEntity;
 
+import java.io.*;
+import java.net.Socket;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
-import static org.apache.http.HttpHeaders.ACCEPT;
-import static org.apache.http.HttpHeaders.USER_AGENT;
+import java.util.regex.Pattern;
 
 /**
  * @author Ilya Ivanov
@@ -56,19 +31,10 @@ import static org.apache.http.HttpHeaders.USER_AGENT;
 //                WebSocketMessagingAutoConfiguration.class,
 //                WebServicesAutoConfiguration.class,
 //                WebMvcAutoConfiguration.class,
-//                WebClientAutoConfiguration.class})
-@ImportResource("classpath:spring/client-context.xml")
-@SpringBootConfiguration
-//@EnableAutoConfiguration
-@ComponentScan(
-        excludeFilters = {@ComponentScan.Filter(
-                type = FilterType.CUSTOM,
-                classes = {TypeExcludeFilter.class}
-        ), @ComponentScan.Filter(
-                type = FilterType.CUSTOM,
-                classes = {AutoConfigurationExcludeFilter.class}
-        )}
-)
+//                WebClientAutoConfiguration.class,
+//                EmbeddedServletContainerAutoConfiguration.class})
+@ComponentScan
+//@ImportResource("classpath:spring/client-context.xml")
 public class Client implements Runnable {
     /** log4j logger */
     private static final Logger log = Logger.getLogger(Client.class);
@@ -86,41 +52,46 @@ public class Client implements Runnable {
 
     @Override
     public void run() {
-        HttpGet request = new HttpGet();
-        // add request header
-        request.addHeader("UserEntity-Agent", USER_AGENT);
-        request.addHeader("application/xml", ACCEPT);
+        final UserEntity entity = new UserEntity("ilya", "ilya");
+        ObjectMapper mapper = new ObjectMapper();
+        String body = null;
         try {
-            request.setURI(new URI("/persons"));
-        } catch (URISyntaxException e) {
+            body = mapper.writeValueAsString(entity);
+        } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
 
+        RequestEntity request =
+                RequestEntity.post(URI.create("/users/1")).accept(MediaType.APPLICATION_JSON).header("Token", "archive-token").body(body);
         System.out.println(request);
+
+
+        ResponseEntity response = null;
+        try (Socket self = new Socket(host, port);
+             final ObjectOutputStream out = new ObjectOutputStream(self.getOutputStream());
+             final ObjectInputStream in = new ObjectInputStream(self.getInputStream())
+        ) {
+            {
+                out.writeObject(request);
+//                self.shutdownOutput();
+            }
+            System.out.println("Waiting for response...");
+            {
+                response = (ResponseEntity) in.readObject();
+//                self.shutdownInput();
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            log.error("Client socket stream error: ", e);
+        }
+        System.out.println(response);
     }
 
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
-        List<Transport> transports = new ArrayList<>(2);
-        transports.add(new WebSocketTransport(new StandardWebSocketClient()));
-        transports.add(new RestTemplateXhrTransport());
-
-        SockJsClient sockJsClient = new SockJsClient( transports);
-        final ListenableFuture<WebSocketSession> handshake = sockJsClient.doHandshake(new MyWebSocketHandler(), "ws://localhost:8080/archive");
-        handshake.addCallback(new ListenableFutureCallback<WebSocketSession>() {
-            @Override
-            public void onFailure(Throwable throwable) {
-
-            }
-
-            @Override
-            public void onSuccess(WebSocketSession webSocketSession) {
-                System.out.println(webSocketSession.getUri());
-            }
-        });
-        handshake.get();
-        System.out.println("Handshake done");
+    public static void main(String[] args) {
+        final ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("spring/client-context.xml");
+        final Client client = context.getBean(Client.class);
+        client.run();
     }
-
+//
 //    public static void main(String[] args) {
 //        SpringApplication.run(Client.class);
 //    }
@@ -129,26 +100,6 @@ public class Client implements Runnable {
 //    public CommandLineRunner demo(Client client) {
 //        return (args) -> {
 //            client.run();
-//            List<Transport> transports = new ArrayList<>(2);
-//            transports.add(new WebSocketTransport(new StandardWebSocketClient()));
-//            transports.add(new RestTemplateXhrTransport());
-//
-//            SockJsClient sockJsClient = new SockJsClient(transports);
-//            final ListenableFuture<WebSocketSession> handshake = sockJsClient.doHandshake(new MyWebSocketHandler(), "ws://example.com:8080/archive");
-//            handshake.addCallback(new ListenableFutureCallback<WebSocketSession>() {
-//                @Override
-//                public void onFailure(Throwable throwable) {
-//
-//                }
-//
-//                @Override
-//                public void onSuccess(WebSocketSession webSocketSession) {
-//                    System.out.println(webSocketSession.getHandshakeHeaders());
-//                    System.out.println(webSocketSession.getId());
-//                    System.out.println(webSocketSession.getUri());
-//                }
-//            });
-//            sockJsClient.start();
 //        };
 //    }
 }

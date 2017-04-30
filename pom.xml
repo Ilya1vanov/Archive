@@ -4,6 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <packaging>jar</packaging>
+
     <groupId>com.ilya.ivanov</groupId>
     <artifactId>archive</artifactId>
     <version>1.0-SNAPSHOT</version>
@@ -61,11 +63,20 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
-
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.tomcat</groupId>
+                    <artifactId>tomcat-jdbc</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -78,6 +89,10 @@
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-tomcat</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -120,37 +135,37 @@
         </dependency>
 
         <!--spring web sockets-->
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>webjars-locator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>sockjs-client</artifactId>
-            <version>1.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>stomp-websocket</artifactId>
-            <version>2.3.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>bootstrap</artifactId>
-            <version>3.3.7</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>jquery</artifactId>
-            <version>3.1.0</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.webjars</groupId>-->
+            <!--<artifactId>webjars-locator</artifactId>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>org.webjars</groupId>-->
+            <!--<artifactId>sockjs-client</artifactId>-->
+            <!--<version>1.0.2</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>org.webjars</groupId>-->
+            <!--<artifactId>stomp-websocket</artifactId>-->
+            <!--<version>2.3.3</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>org.webjars</groupId>-->
+            <!--<artifactId>bootstrap</artifactId>-->
+            <!--<version>3.3.7</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>org.webjars</groupId>-->
+            <!--<artifactId>jquery</artifactId>-->
+            <!--<version>3.1.0</version>-->
+        <!--</dependency>-->
 
         <!--network-->
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.5.3</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.apache.httpcomponents</groupId>-->
+            <!--<artifactId>httpclient</artifactId>-->
+            <!--<version>4.5.3</version>-->
+        <!--</dependency>-->
 
         <!--logger-->
         <dependency>
@@ -233,11 +248,17 @@
         </dependency>
 
         <!--properties, XML and JSON-->
+        <!--<dependency>-->
+            <!--<groupId>com.google.code.gson</groupId>-->
+            <!--<artifactId>gson</artifactId>-->
+            <!--<version>2.8.0</version>-->
+        <!--</dependency>-->
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.8.0</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.8.7</version>
         </dependency>
+
 
         <!--collections and file utilities-->
         <dependency>
@@ -246,12 +267,24 @@
             <version>r09</version>
         </dependency>
 
+        <!--apache-->
+        <!--<dependency>-->
+            <!--<groupId>org.apache.commons</groupId>-->
+            <!--<artifactId>commons-io</artifactId>-->
+            <!--<version>1.3.2</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>org.apache.httpcomponents</groupId>-->
+            <!--<artifactId>fluent-hc</artifactId>-->
+            <!--<version>4.5.3</version>-->
+        <!--</dependency>-->
+
         <!--GUI-->
 
     </dependencies>
 
     <repositories>
-        <repository>
+    <repository>
             <id>spring-releases</id>
             <name>Spring Releases</name>
             <url>https://repo.spring.io/libs-release</url>
