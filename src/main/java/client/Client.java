@@ -17,6 +17,7 @@ import server.spring.rest.protocol.ResponseEntity;
 import java.io.*;
 import java.net.Socket;
 import java.net.URI;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -62,7 +63,11 @@ public class Client implements Runnable {
         }
 
         RequestEntity request =
-                RequestEntity.post(URI.create("/users/1")).accept(MediaType.APPLICATION_JSON).header("Token", "archive-token").body(body);
+                RequestEntity.get(URI.create("/signin"))
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("Token", "archive-token")
+                        .header("Alternates", "DOM")
+                        .header("Authorization", entity.getLogin() + ":" + entity.getPassword()).build();
         System.out.println(request);
 
 
@@ -71,15 +76,13 @@ public class Client implements Runnable {
              final ObjectOutputStream out = new ObjectOutputStream(self.getOutputStream());
              final ObjectInputStream in = new ObjectInputStream(self.getInputStream())
         ) {
-            {
-                out.writeObject(request);
-//                self.shutdownOutput();
-            }
+            out.writeObject(request);
+            self.shutdownOutput();
+
             System.out.println("Waiting for response...");
-            {
-                response = (ResponseEntity) in.readObject();
-//                self.shutdownInput();
-            }
+
+            response = (ResponseEntity) in.readObject();
+            self.shutdownInput();
         } catch (IOException | ClassNotFoundException e) {
             log.error("Client socket stream error: ", e);
         }

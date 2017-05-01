@@ -1,58 +1,139 @@
 package server.spring.rest.controller;
 
-import javassist.NotFoundException;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.*;
+import server.spring.data.model.Employee;
 import server.spring.data.model.EmployeeEntity;
+import server.spring.data.model.EmployeeMeta;
+import server.spring.data.model.UserEntity;
 import server.spring.data.repository.EmployeeEntityRepository;
+import server.spring.rest.parsers.Parser;
+import server.spring.rest.protocol.exception.BadRequestException;
+import server.spring.rest.protocol.exception.ForbiddenException;
+import server.spring.rest.protocol.exception.HttpException;
+import server.spring.rest.protocol.exception.NotFoundException;
+import server.spring.rest.session.SessionManager;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Ilya Ivanov
  */
 @RestController
 @RequestMapping("/employees")
-public class EmployeeController implements RestControllerMarker {
+public class EmployeeController {
     private final EmployeeEntityRepository employeeEntityRepository;
 
+    private final ApplicationContext context;
+
+    private final SessionManager sessionManager;
+
     @Autowired
-    public EmployeeController(EmployeeEntityRepository employeeEntityRepository) {
+    public EmployeeController(EmployeeEntityRepository employeeEntityRepository, ApplicationContext context, SessionManager sessionManager) {
         this.employeeEntityRepository = employeeEntityRepository;
+        this.context = context;
+        this.sessionManager = sessionManager;
     }
 
     @RequestMapping(method = RequestMethod.GET, produces = "application/json")
-    public List<EmployeeEntity> findAll() {
-        return employeeEntityRepository.findAll();
+    public List<EmployeeMeta> findAll() {
+        final List<EmployeeEntity> all = employeeEntityRepository.findAll();
+        return all.stream().map(EmployeeEntity::getEmployeeMeta).collect(Collectors.toList());
     }
 
     @RequestMapping(path = "/{id}", method = RequestMethod.GET, produces = "application/json")
-    public EmployeeEntity findOne(@PathVariable("id") Long id) throws NotFoundException {
-        EmployeeEntity employeeEntity = employeeEntityRepository.findOne(id);
-        if (employeeEntity == null)
-            // 404 Not Found
-            throw new NotFoundException("");
+    public Employee findOne(
+            @PathVariable("id") Long id,
+            @RequestHeader("Token") String token) throws HttpException {
+        final UserEntity userEntity = sessionManager.authorize(token);
+        if (!userEntity.hasReadPermission())
+            throw new ForbiddenException();
 
-        return employeeEntity;
+        final EmployeeEntity employeeEntity = employeeEntityRepository.findOne(id);
+        if (employeeEntity == null)
+            throw new NotFoundException();
+
+        Employee employee;
+        try {
+            employee = parse("SAX", employeeEntity.getData());
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot retrieve employee from DB", e);
+        }
+
+        return employee;
     }
 
     @RequestMapping(path = "/{id}", method = RequestMethod.POST, produces = "application/json", consumes = "application/xml")
-    public EmployeeEntity save(@PathVariable("id") Long id, @RequestBody EmployeeEntity employeeEntity) {
-        // validate representation
-        // 403 Forbidden
-        return employeeEntityRepository.save(employeeEntity);
-        // 201 Created
+    public Employee save(
+            @PathVariable("id") Long id,
+            @RequestBody String rawEmployeeEntity,
+            @RequestHeader("Token") String token,
+            @RequestHeader("Alternates") String parser) throws HttpException {
+        final UserEntity userEntity = sessionManager.authorize(token);
+        if (!userEntity.hasWritePermission())
+            throw new ForbiddenException();
+
+        Employee employee = parse(parser, rawEmployeeEntity);
+
+        final EmployeeEntity employeeEntity;
+        try {
+            employeeEntity = new EmployeeEntity(employee, rawEmployeeEntity);
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot instantiate employee", e);
+        }
+        employeeEntityRepository.save(employeeEntity);
+        employee.setId(employeeEntity.getId());
+        return employee;
     }
 
     @RequestMapping(path = "/{id}", method = RequestMethod.PUT, produces = "application/json", consumes = "application/xml")
-    public EmployeeEntity update(@PathVariable("id") Long id, @RequestBody EmployeeEntity employeeEntity) {
-        // validate representation
-        return employeeEntityRepository.save(employeeEntity);
+    public Employee update(
+            @RequestBody String rawEmployeeEntity,
+            @RequestHeader("Token") String token,
+            @RequestHeader("Alternates") String parser) throws HttpException {
+        final UserEntity userEntity = sessionManager.authorize(token);
+        if (!userEntity.hasEditPermission())
+            throw new ForbiddenException();
+
+        Employee employee = parse(parser, rawEmployeeEntity);
+
+        final EmployeeEntity employeeEntity;
+        try {
+            employeeEntity = new EmployeeEntity(employee, rawEmployeeEntity);
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot instantiate employee", e);
+        }
+        employeeEntityRepository.save(employeeEntity);
+        employee.setId(employeeEntity.getId());
+        return employee;
     }
 
-    @RequestMapping(path = "/{id}", method = RequestMethod.DELETE, produces = "application/json")
-    public void delete(@PathVariable("id") Long id, @RequestBody EmployeeEntity employeeEntity) {
-        // validate representation
-        employeeEntityRepository.delete(employeeEntity);
+    @RequestMapping(path = "/{id}", method = RequestMethod.DELETE, produces = "application/xml")
+    public void delete(
+            @RequestBody String rawEmployeeEntity,
+            @RequestHeader("Token") String token,
+            @RequestHeader("Alternates") String parser) throws HttpException {
+        final UserEntity userEntity = sessionManager.authorize(token);
+        if (!userEntity.hasWritePermission())
+            throw new ForbiddenException();
+
+        final Employee employee = parse(parser, rawEmployeeEntity);
+
+        employeeEntityRepository.delete(employee.getId());
+    }
+
+    private Employee parse(String parserType, String rawData) throws HttpException {
+        try {
+            Parser parser = (Parser) context.getBean(parserType + "Parser");
+            return parser.parse(rawData, Employee.class);
+        } catch (BeansException e) {
+            throw new BadRequestException();
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot instantiate employee", e);
+        }
     }
 }

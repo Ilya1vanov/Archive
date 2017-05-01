@@ -77,7 +77,7 @@ public class Server implements Runnable {
     @Bean
     public CommandLineRunner application(Server server, UserEntityRepository repository) {
         return (String... args) -> {
-            repository.save(new UserEntity("sdkjjf", "sdfa"));
+            repository.save(new UserEntity("ilya", "ilya", UserEntity.ADMIN));
             final List<UserEntity> all = repository.findAll();
             log.debug(all);
             Thread serverThread = null;

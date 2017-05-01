@@ -2,6 +2,7 @@ package server.spring.rest;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import server.spring.rest.protocol.RequestEntity;
 import server.spring.rest.protocol.ResponseEntity;
 
@@ -31,17 +32,25 @@ public class SocketDispatcher implements Runnable {
 
             final RequestEntity request = (RequestEntity) in.readObject();
             System.out.println(request);
-//            self.shutdownInput();
+            self.shutdownInput();
 
-            ResponseEntity response = handlerMapping.handle(request);
+            ResponseEntity response;
+            try {
+                response = handlerMapping.handle(request);
+            } catch (RuntimeException e) {
+                log.error(e);
+                response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("I am so sorry");
+            }
 
             out.writeObject(response);
             System.out.println(response);
-//            self.shutdownOutput();
-        } catch (IOException | ClassNotFoundException e) {
+            self.shutdownOutput();
+        } catch (ClassNotFoundException e) {
             log.error(e);
             throw new RuntimeException(e);
-        } finally {
+        } catch (IOException e) {
+            log.warn(e);
+        }finally {
             try {
                 self.close();
             } catch (IOException e) {

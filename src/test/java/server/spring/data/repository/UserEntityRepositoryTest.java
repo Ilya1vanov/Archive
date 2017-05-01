@@ -69,11 +69,10 @@ public class UserEntityRepositoryTest {
 
     @Test
     public void testFindByLoginAndPassword() {
-        final List<UserEntity> entities = userEntityRepository.findByLoginAndPassword("ilya", "ilya");
-        Assertions.assertThat(entities).isNotNull().isNotEmpty();
-        assertThat(entities.size(), is(1));
-        assertThat(entities.get(0).getLogin(), is("ilya"));
-        assertThat(entities.get(0).getPassword(), is("ilya"));
+        final UserEntity entity = userEntityRepository.findByLoginAndPassword("ilya", "ilya");
+        assertThat(entity, notNullValue());
+        assertThat(entity.getLogin(), is("ilya"));
+        assertThat(entity.getPassword(), is("ilya"));
     }
 
     @Test

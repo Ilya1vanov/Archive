@@ -1,25 +1,28 @@
 package server.spring.rest;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
+import javafx.util.Pair;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.xml.sax.SAXException;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import server.spring.rest.protocol.RequestEntity;
 import server.spring.rest.protocol.ResponseEntity;
 import server.spring.rest.controller.EmployeeController;
 import server.spring.rest.controller.LoginController;
-import server.spring.rest.controller.RestControllerMarker;
 import server.spring.rest.controller.UserController;
+import server.spring.rest.protocol.exception.HttpException;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -29,98 +32,165 @@ import java.util.stream.Collectors;
  */
 @Component
 public class HandlerMapping {
-    private Map<Method, RestControllerMarker> restControllerMap = new HashMap<>();
+    private static final Logger log = Logger.getLogger(HandlerMapping.class);
 
-    private Multimap<String, Method> URLMap = HashMultimap.create();
-
-    private Multimap<Method, HttpMethod> methodHttpMethodMap = HashMultimap.create();
-
-    private final ControllerArgumentsResolver controllerArgumentsResolver;
+    private List<ControllerMethod> controllerMethods = Lists.newArrayList();
 
     @Autowired
-    public HandlerMapping(LoginController loginController, UserController userController, EmployeeController employeeController, ControllerArgumentsResolver controllerArgumentsResolver) {
-        initialize(Arrays.asList(loginController, userController, employeeController));
-        this.controllerArgumentsResolver = controllerArgumentsResolver;
-    }
-
-    private void initialize(List<? extends RestControllerMarker> controllers) {
-        for (RestControllerMarker controller : controllers) {
-            final Class<? extends RestControllerMarker> aClass = controller.getClass();
-            final RequestMapping annotation = aClass.getAnnotation(RequestMapping.class);
-            final String[] classPaths = annotation.value();
-            if (classPaths.length == 0)
-                continue;
+    public HandlerMapping(LoginController loginController, UserController userController, EmployeeController employeeController) {
+        for (Object controller : Arrays.asList(loginController, userController, employeeController)) {
+            final Class<?> aClass = controller.getClass();
 
             final List<Method> annotatedMethods =
                     Arrays.stream(aClass.getMethods()).filter(method -> method.isAnnotationPresent(RequestMapping.class)).collect(Collectors.toList());
-            for (Method annotatedMethod : annotatedMethods) {
-                final RequestMapping methodAnnotation = annotatedMethod.getAnnotation(RequestMapping.class);
-                final String[] methodPaths = methodAnnotation.path();
 
-                restControllerMap.put(annotatedMethod, controller);
-                for (String classPath : classPaths) {
-                    if (methodPaths.length == 0)
-                        URLMap.put(classPath, annotatedMethod);
-                    else
-                        for (String methodPath : methodPaths) {
-                            final String quoted = methodPath.replaceAll("\\{.+}", ".+");
-                            URLMap.put(Pattern.quote(classPath) + quoted, annotatedMethod);
-                        }
-                }
-
-                final RequestMethod[] requestMethods = methodAnnotation.method();
-                for (RequestMethod requestMethod : requestMethods)
-                    methodHttpMethodMap.put(annotatedMethod, HttpMethod.resolve(requestMethod.name()));
-            }
+            for (Method annotatedMethod : annotatedMethods)
+                controllerMethods.add(new ControllerMethod(controller, annotatedMethod));
         }
     }
 
     ResponseEntity handle(RequestEntity request) {
-        final URI url = request.getUrl();
+        final String urlPath = request.getUrl().getPath();
         final HttpMethod httpMethod = request.getMethod();
 
-        final List<String> suitablePaths =
-                URLMap.keySet().stream()
-                        .filter(pattern -> Pattern.matches(pattern, url.getPath()))
-                        .collect(Collectors.toList());
+        final List<ControllerMethod> convenienceMethods = controllerMethods.stream().filter(controllerMethod ->
+                controllerMethod.hasHttpMethod(httpMethod) && controllerMethod.hasPaths(urlPath))
+                .collect(Collectors.toList());
 
-        if (suitablePaths.isEmpty())
-            // throw
+        if (convenienceMethods.isEmpty())
             return new ResponseEntity(HttpStatus.NOT_FOUND);
 
-        // suitable paths are all the same
-        final String suitablePath = suitablePaths.get(0);
-        final Collection<Method> methods = URLMap.get(suitablePath);
 
-        final Method suitableMethod = getSuitableMethod(methods, httpMethod);
-        if (suitableMethod == null)
-            return new ResponseEntity(HttpStatus.NOT_FOUND);
+        if (convenienceMethods.size() > 1)
+            throw new RuntimeException("Controllers methods are not deterministic. Method: " + convenienceMethods);
 
         Object returnedValue = null;
         try {
-            List<Object> parameters = controllerArgumentsResolver.resolve(request, suitableMethod);
-            final RestControllerMarker controller = restControllerMap.get(suitableMethod);
-            returnedValue = suitableMethod.invoke(controller, parameters);
+            ControllerMethod convenienceMethod = convenienceMethods.get(0);
+            final Object[] parameters = convenienceMethod.getControllerArgumentsResolver().resolve(request);
+            final Method method = convenienceMethod.getMethod();
+            final Object controller = convenienceMethod.getController();
+            returnedValue = method.invoke(controller, parameters);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
-        } catch (InvocationTargetException | IOException | SAXException e) {
-            // parse
-            return ResponseEntity.notFound().build();
+        } catch (InvocationTargetException | HttpException e) {
+            final ResponseStatus annotation = e.getCause().getClass().getAnnotation(ResponseStatus.class);
+            if (annotation != null) {
+                final HttpStatus code = annotation.value();
+                final String reason = e.getMessage();
+                return ResponseEntity.status(code).body(reason);
+            }
+            return ResponseEntity.unprocessableEntity().build();
         }
 
-//        returnedValue;
-        ResponseEntity.ok();
-        return new ResponseEntity(HttpStatus.OK);
+        return new ResponseEntity(getBody(returnedValue), getHeaders(returnedValue, request.getHeaders()), getStatus(httpMethod));
     }
 
-    private Method getSuitableMethod(Collection<Method> methods, HttpMethod httpMethod) {
-        final List<Method> methodList = methods.stream().filter(method ->
-                methodHttpMethodMap.get(method).stream().filter(requestMethod -> requestMethod.equals(httpMethod)).count() >= 1)
-                .collect(Collectors.toList());
-        if (methodList.isEmpty())
-            return null;
-        if (methodList.size() > 1)
-            throw new RuntimeException("Controllers methods are not deterministic. Method: " + httpMethod);
-        return methodList.get(0);
+    private HttpStatus getStatus(HttpMethod method) {
+        HttpStatus status;
+        switch (method) {
+            case GET:
+                status = HttpStatus.OK;
+                break;
+            case PUT:
+                status = HttpStatus.CREATED;
+                break;
+            case DELETE:
+                status = HttpStatus.NO_CONTENT;
+                break;
+            default:
+                status = HttpStatus.OK;
+        }
+        return status;
+    }
+
+    private String getBody(Object returnedValue) {
+        if (returnedValue == null)
+            return "";
+
+        String body;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            if (returnedValue instanceof Pair) {
+                Pair pair = (Pair) returnedValue;
+                body = mapper.writeValueAsString(pair.getValue());
+
+            } else
+                body = mapper.writeValueAsString(returnedValue);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Jackson mapper error", e);
+        }
+        return body;
+    }
+
+    private MultiValueMap<String, String> getHeaders(Object returnedValue, HttpHeaders requestHeaders) {
+        MultiValueMap<String, String> headers = new HttpHeaders();
+        if (returnedValue instanceof Pair) {
+            Pair pair = (Pair) returnedValue;
+            headers.add("Token", (String) pair.getKey());
+        }
+
+        return headers;
+    }
+
+    private class ControllerMethod {
+        private Object controller;
+
+        private List<HttpMethod> httpMethods = Lists.newArrayList();
+
+        private final ControllerArgumentsResolver controllerArgumentsResolver;
+
+        private Method method;
+
+        private List<String> urlPaths = Lists.newArrayList();
+
+        ControllerMethod(Object controller, Method method) {
+            this.controller = controller;
+            this.method = method;
+            this.controllerArgumentsResolver = new ControllerArgumentsResolver(method);
+            initialize();
+        }
+
+        private void initialize() {
+            final RequestMapping classAnnotation = controller.getClass().getAnnotation(RequestMapping.class);
+            final List<String> classPaths = Lists.newArrayList(classAnnotation.value());
+            if (classPaths.size() == 0)
+                classPaths.add("");
+
+            final RequestMapping methodAnnotation = method.getAnnotation(RequestMapping.class);
+            final List<String> methodPaths = Lists.newArrayList(methodAnnotation.path());
+            if (methodPaths.size() == 0)
+                methodPaths.add("");
+
+            for (String classPath : classPaths)
+                for (String methodPath : methodPaths) {
+                    final String quoted = methodPath.replaceAll("\\{.+}", ".+");
+                    urlPaths.add(Pattern.quote(classPath) + quoted);
+                }
+
+            final RequestMethod[] requestMethods = methodAnnotation.method();
+            for (RequestMethod requestMethod : requestMethods)
+                httpMethods.add(HttpMethod.resolve(requestMethod.name()));
+        }
+
+        Object getController() {
+            return controller;
+        }
+
+        boolean hasHttpMethod(HttpMethod httpMethod) {
+            return httpMethods.isEmpty() || httpMethods.contains(httpMethod);
+        }
+
+        ControllerArgumentsResolver getControllerArgumentsResolver() {
+            return controllerArgumentsResolver;
+        }
+
+        Method getMethod() {
+            return method;
+        }
+
+        boolean hasPaths(String urlPath) {
+            return urlPaths.stream().anyMatch(s -> Pattern.matches(s, urlPath));
+        }
     }
 }

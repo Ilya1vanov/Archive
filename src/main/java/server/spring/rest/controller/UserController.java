@@ -1,11 +1,16 @@
 package server.spring.rest.controller;
 
-import javassist.NotFoundException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import server.spring.data.model.UserEntity;
 import server.spring.data.repository.UserEntityRepository;
+import server.spring.rest.protocol.exception.BadRequestException;
+import server.spring.rest.protocol.exception.ForbiddenException;
+import server.spring.rest.protocol.exception.HttpException;
+import server.spring.rest.session.SessionManager;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -13,46 +18,67 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/users")
-public class UserController implements RestControllerMarker {
+public class UserController {
+    private final SessionManager sessionManager;
+
     private final UserEntityRepository userEntityRepository;
 
     @Autowired
-    public UserController(UserEntityRepository userEntityRepository) {
+    public UserController(SessionManager sessionManager, UserEntityRepository userEntityRepository) {
+        this.sessionManager = sessionManager;
         this.userEntityRepository = userEntityRepository;
     }
 
     @RequestMapping(method = RequestMethod.GET, produces = "application/json")
-    public List<UserEntity> findAll() {
+    public List<UserEntity> findAll(@RequestHeader("Token") String token) throws HttpException {
+        final UserEntity validatedUser = sessionManager.authorize(token);
+
+        if (!validatedUser.hasReadPermission())
+            throw new ForbiddenException();
+
         return userEntityRepository.findAll();
     }
 
-    @RequestMapping(path = "/{id}", method = RequestMethod.GET)
-    public UserEntity findOne(@PathVariable("id") Long id) throws NotFoundException {
-        UserEntity userEntity = userEntityRepository.findOne(id);
-        if (userEntity == null)
-            // 404 Not Found
-            throw new NotFoundException("");
+    @RequestMapping(path = "/{id}", method = RequestMethod.PUT, produces = "application/json", consumes = "application/json")
+    public UserEntity update(
+            @PathVariable("id") Long id,
+            @RequestHeader("Token") String token,
+            @RequestBody String rawUserEntity) throws HttpException {
+        final UserEntity validatedUser = sessionManager.authorize(token);
 
-        return userEntity;
-    }
+        if (!validatedUser.hasAdminPermission())
+            throw new ForbiddenException("User must have ADMIN permissions to perform this operation");
 
-    @RequestMapping(path = "/{id}", method = RequestMethod.POST, produces = "application/json", consumes = "application/xml")
-    public UserEntity save(@PathVariable("id") Long id, @RequestBody UserEntity userEntity) {
-        // validate representation
-        // 403 Forbidden
-        return userEntityRepository.save(userEntity);
-        // 201 Created
-    }
+        final UserEntity userEntity = parse(rawUserEntity);
+        if (userEntity.getId().equals(id))
+            throw new BadRequestException("ID mismatch");
 
-    @RequestMapping(path = "/{id}", method = RequestMethod.PUT, produces = "application/json", consumes = "application/xml")
-    public UserEntity update(@PathVariable("id") Long id, @RequestBody UserEntity userEntity) {
-        // validate representation
         return userEntityRepository.save(userEntity);
     }
 
-    @RequestMapping(path = "/{id}", method = RequestMethod.DELETE, produces = "application/json")
-    public void delete(@PathVariable("id") Long id, @RequestBody UserEntity userEntity) {
-        // validate representation
+    @RequestMapping(path = "/{id}", method = RequestMethod.DELETE, consumes = "application/json")
+    public void delete(
+            @PathVariable("id") Long id,
+            @RequestHeader("Token") String token,
+            @RequestBody String rawUserEntity) throws HttpException {
+        final UserEntity validatedUser = sessionManager.authorize(token);
+
+        if (!validatedUser.hasAdminPermission())
+            throw new ForbiddenException();
+
+        final UserEntity userEntity = parse(rawUserEntity);
+        if (userEntity.getId().equals(id))
+            throw new BadRequestException();
+
         userEntityRepository.delete(userEntity);
+    }
+
+    private UserEntity parse(String rawUserEntity) throws BadRequestException {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            return mapper.readValue(rawUserEntity, UserEntity.class);
+        } catch (IOException e) {
+            throw new BadRequestException("Invalid request body");
+        }
     }
 }

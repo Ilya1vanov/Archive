@@ -6,6 +6,8 @@
     <users id="3" login="tanya" password="tanya" permissions="1"/>
     <users id="4" login="ira" password="ira" permissions="5"/>
 
-
+    <!--<employees id="1" firstName="ilya" lastName="Ivanov" middleName="Petrovich" data=""/>-->
+    <!--<employees id="2" firstName="Vlad" lastName="Doroshko" middleName="Eduardovich" data=""/>-->
+    <!--<employees id="3" firstName="Ivan" lastName="Vasilevsky" middleName="Vladimirovich" data=""/>-->
 
 </dataset>

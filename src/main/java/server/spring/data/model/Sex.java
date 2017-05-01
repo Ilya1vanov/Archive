@@ -1,4 +1,4 @@
-package server.employee;
+package server.spring.data.model;
 
 /**
  * @author Ilya Ivanov

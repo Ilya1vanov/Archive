@@ -3,12 +3,11 @@ package server.spring.data.model;
 import org.springframework.util.StreamUtils;
 
 import javax.persistence.*;
-import javax.sql.rowset.serial.SerialBlob;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Blob;
-import java.sql.SQLException;
+import javax.xml.bind.annotation.XmlElement;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * @author Ilya Ivanov
@@ -21,60 +20,48 @@ public class EmployeeEntity {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "firstName")
-    private String firstName;
-
-    @Column(name = "middleName")
-    private String middleName;
-
-    @Column(name = "lastName")
-    private String lastName;
+    @Embedded
+    private EmployeeMeta employeeMeta;
 
     @Lob
     @Basic(fetch = FetchType.LAZY)
-    @Column(name = "data")
-    private Blob data;
+    @Column(name = "data", nullable = false, length = 0x30_0000)
+    private byte[] data;
 
     protected EmployeeEntity() {
     }
 
-    public EmployeeEntity(String firstName, String middleName, String lastName, InputStream in) throws IOException, SQLException {
-        this.firstName = firstName;
-        this.middleName = middleName;
-        this.lastName = lastName;
-        this.data = new SerialBlob(StreamUtils.copyToByteArray(new ZipInputStream(in)));
+    public EmployeeEntity(EmployeeMeta employeeMeta, String raw) throws IOException {
+        this.employeeMeta = employeeMeta;
+        setData(raw);
+    }
+
+    public EmployeeEntity(Employee employee, String raw) throws IOException {
+        this.employeeMeta = employee.getEmployeeMeta();
+        setData(raw);
     }
 
     public Long getId() {
         return id;
     }
 
-    public String getFirstName() {
-        return firstName;
+    public EmployeeMeta getEmployeeMeta() {
+        return employeeMeta;
     }
 
-    public String getMiddleName() {
-        return middleName;
-    }
-
-    public String getLastName() {
-        return lastName;
+    private void setData(String raw) throws IOException {
+        final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        final ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream);
+        zipOutputStream.write(raw.getBytes());
+        this.data = byteArrayOutputStream.toByteArray();
     }
 
     /**
      * Unzip and makes a defensive copy of blob.
      * @return unziped data
-     * @throws SQLException if a SQL errors occurs
      * @throws IOException if an IO errors occurs
      */
-    public Blob getData() throws SQLException, IOException {
-        return new SerialBlob(StreamUtils.copyToByteArray(new ZipInputStream(data.getBinaryStream())));
-    }
-
-    @Override
-    public String toString() {
-        return "EmployeeEntity{" +
-                "id=" + id +
-                '}';
+    public String getData() throws IOException {
+        return StreamUtils.copyToString(new ZipInputStream(new ByteArrayInputStream(data)), Charset.forName("UTF-8"));
     }
 }
