@@ -1,6 +1,5 @@
-package server.spring.rest.protocol.exception;
+package server.spring.rest.exception;
 
-import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 

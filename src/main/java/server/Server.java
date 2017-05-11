@@ -4,14 +4,18 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.EnableLoadTimeWeaving;
 import org.springframework.context.annotation.ImportResource;
+import server.spring.data.model.Role;
 import server.spring.data.model.UserEntity;
 import server.spring.data.repository.UserEntityRepository;
-import server.spring.rest.HandlerMapping;
-import server.spring.rest.SocketDispatcher;
+import server.spring.rest.mapping.HandlerMapping;
+import server.spring.rest.dispatcher.SocketDispatcher;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,32 +29,23 @@ import java.util.concurrent.Executors;
 /**
  * @author Ilya Ivanov
  */
-@ImportResource("classpath:spring/server-context.xml")
+@ImportResource("classpath:spring/network-context.xml")
 @SpringBootApplication
-//@EnableAutoConfiguration(exclude = {
-//        DataSourceAutoConfiguration.class,
-//        WebSocketAutoConfiguration.class,
-//        WebSocketMessagingAutoConfiguration.class,
-//        WebServicesAutoConfiguration.class,
-//        WebMvcAutoConfiguration.class,
-//        WebClientAutoConfiguration.class,
-//        EmbeddedServletContainerAutoConfiguration.class})
 public class Server implements Runnable {
     /** log4j logger */
     private static final Logger log = Logger.getLogger(Server.class);
 
     /** connection port */
-    private int port;
+    private Integer port;
 
     /** requested maximum length of the queue of incoming connections */
-    private int backlog;
+    private Integer backlog;
 
-    @Autowired
-    ApplicationContext context;
+    @Autowired private ApplicationContext context;
 
     private ExecutorService clients = Executors.newCachedThreadPool();
 
-    public Server(int port, int backlog) {
+    public Server(Integer port, Integer backlog) {
         this.port = port;
         this.backlog = backlog;
     }
@@ -58,12 +53,10 @@ public class Server implements Runnable {
     @Override
     public void run() {
         log.info("Server run");
-        final HandlerMapping bean = context.getBean(HandlerMapping.class);
-
         try (ServerSocket serverSocket = new ServerSocket(port, backlog)) {
             while (!Thread.currentThread().isInterrupted()) {
                 final Socket client = serverSocket.accept();
-                clients.submit(new SocketDispatcher(client, bean));
+                clients.submit(context.getBean(SocketDispatcher.class, client));
             }
         } catch (IOException e) {
             log.error("Server socket closed: ", e);
@@ -77,7 +70,7 @@ public class Server implements Runnable {
     @Bean
     public CommandLineRunner application(Server server, UserEntityRepository repository) {
         return (String... args) -> {
-            repository.save(new UserEntity("ilya", "ilya", UserEntity.ADMIN));
+            repository.save(new UserEntity("ilya", "ilya", Role.ADMIN));
             final List<UserEntity> all = repository.findAll();
             log.debug(all);
             Thread serverThread = null;

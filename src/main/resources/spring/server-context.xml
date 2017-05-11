@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-    <bean id="server" class="server.Server">
-        <constructor-arg name="port" type="int" value="2002"/>
-        <constructor-arg name="backlog" type="int" value="50"/>
-    </bean>
 
-    <bean id="xmlValidator" class="server.spring.rest.parsers.Parser$XMLValidator">
-        <constructor-arg name="schema" type="java.io.File" value="classpath:xsd/employee.xsd"/>
-    </bean>
+
+    <!--<bean id="httpSerializer" class="server.spring.rest.dispatcher.HttpSerializer">-->
+        <!--<property name="employeeSchema" value="file:xsd/employee.xsd"/>-->
+    <!--</bean>-->
+    <!--<context:load-time-weaver aspectj-weaving="autodetect"/>-->
+    <!--<context:spring-configured/>-->
 
 </beans>

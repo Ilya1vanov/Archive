@@ -1,17 +1,16 @@
 package server.spring.rest.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import server.spring.data.model.UserEntity;
 import server.spring.data.repository.UserEntityRepository;
-import server.spring.rest.protocol.exception.BadRequestException;
-import server.spring.rest.protocol.exception.ForbiddenException;
-import server.spring.rest.protocol.exception.HttpException;
+import server.spring.rest.exception.BadRequestException;
+import server.spring.rest.exception.ForbiddenException;
+import server.spring.rest.exception.HttpException;
 import server.spring.rest.session.SessionManager;
 
-import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Ilya Ivanov
@@ -31,7 +30,7 @@ public class UserController {
 
     @RequestMapping(method = RequestMethod.GET, produces = "application/json")
     public List<UserEntity> findAll(@RequestHeader("Token") String token) throws HttpException {
-        final UserEntity validatedUser = sessionManager.authorize(token);
+        final UserEntity validatedUser = sessionManager.validateByToken(token);
 
         if (!validatedUser.hasReadPermission())
             throw new ForbiddenException();
@@ -39,19 +38,36 @@ public class UserController {
         return userEntityRepository.findAll();
     }
 
-    @RequestMapping(path = "/{id}", method = RequestMethod.PUT, produces = "application/json", consumes = "application/json")
-    public UserEntity update(
-            @PathVariable("id") Long id,
-            @RequestHeader("Token") String token,
-            @RequestBody String rawUserEntity) throws HttpException {
-        final UserEntity validatedUser = sessionManager.authorize(token);
+    @RequestMapping(path = "/{id}", method = RequestMethod.GET, produces = "application/json")
+    public UserEntity findOne(@PathVariable("id") Long id, @RequestHeader("Token") String token) throws HttpException {
+        final UserEntity validatedUser = sessionManager.validateByToken(token);
+
+        if (!validatedUser.hasReadPermission())
+            throw new ForbiddenException();
+
+        return userEntityRepository.findOne(id);
+    }
+
+    @RequestMapping(method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+    public UserEntity add(@RequestHeader("Token") String token, @RequestBody UserEntity userEntity) throws HttpException {
+        final UserEntity validatedUser = sessionManager.validateByToken(token);
 
         if (!validatedUser.hasAdminPermission())
             throw new ForbiddenException("User must have ADMIN permissions to perform this operation");
 
-        final UserEntity userEntity = parse(rawUserEntity);
-        if (userEntity.getId().equals(id))
-            throw new BadRequestException("ID mismatch");
+        return userEntityRepository.save(userEntity);
+    }
+
+    @RequestMapping(path = "/{id}", method = RequestMethod.PUT, produces = "application/json", consumes = "application/json")
+    public UserEntity update(
+            @PathVariable("id") Long id,
+            @RequestHeader("Token") String token,
+            @RequestBody UserEntity userEntity) throws HttpException {
+        final UserEntity validatedUser = sessionManager.validateByToken(token);
+        validateId(id, userEntity.getId());
+
+        if (!validatedUser.hasAdminPermission())
+            throw new ForbiddenException("User must have ADMIN permissions to perform this operation");
 
         return userEntityRepository.save(userEntity);
     }
@@ -60,25 +76,18 @@ public class UserController {
     public void delete(
             @PathVariable("id") Long id,
             @RequestHeader("Token") String token,
-            @RequestBody String rawUserEntity) throws HttpException {
-        final UserEntity validatedUser = sessionManager.authorize(token);
+            @RequestBody UserEntity userEntity) throws HttpException {
+        final UserEntity validatedUser = sessionManager.validateByToken(token);
+        validateId(id, userEntity.getId());
 
         if (!validatedUser.hasAdminPermission())
             throw new ForbiddenException();
 
-        final UserEntity userEntity = parse(rawUserEntity);
-        if (userEntity.getId().equals(id))
-            throw new BadRequestException();
-
         userEntityRepository.delete(userEntity);
     }
 
-    private UserEntity parse(String rawUserEntity) throws BadRequestException {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            return mapper.readValue(rawUserEntity, UserEntity.class);
-        } catch (IOException e) {
-            throw new BadRequestException("Invalid request body");
-        }
+    private void validateId(Long pathId, Long loginId) throws BadRequestException {
+        if (!Objects.equals(pathId, loginId))
+            throw new BadRequestException("ID mismatch: requested - " + pathId + " actual - " + loginId);
     }
 }

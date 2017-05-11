@@ -10,15 +10,16 @@ import server.spring.data.model.EmployeeMeta;
 import server.spring.data.model.UserEntity;
 import server.spring.data.repository.EmployeeEntityRepository;
 import server.spring.rest.parsers.Parser;
-import server.spring.rest.protocol.exception.BadRequestException;
-import server.spring.rest.protocol.exception.ForbiddenException;
-import server.spring.rest.protocol.exception.HttpException;
-import server.spring.rest.protocol.exception.NotFoundException;
+import server.spring.rest.exception.BadRequestException;
+import server.spring.rest.exception.ForbiddenException;
+import server.spring.rest.exception.HttpException;
+import server.spring.rest.exception.NotFoundException;
 import server.spring.rest.session.SessionManager;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.zip.DataFormatException;
 
 /**
  * @author Ilya Ivanov
@@ -49,7 +50,7 @@ public class EmployeeController {
     public Employee findOne(
             @PathVariable("id") Long id,
             @RequestHeader("Token") String token) throws HttpException {
-        final UserEntity userEntity = sessionManager.authorize(token);
+        final UserEntity userEntity = sessionManager.validateByToken(token);
         if (!userEntity.hasReadPermission())
             throw new ForbiddenException();
 
@@ -60,7 +61,7 @@ public class EmployeeController {
         Employee employee;
         try {
             employee = parse("SAX", employeeEntity.getData());
-        } catch (IOException e) {
+        } catch (IOException | DataFormatException e) {
             throw new RuntimeException("Cannot retrieve employee from DB", e);
         }
 
@@ -73,7 +74,7 @@ public class EmployeeController {
             @RequestBody String rawEmployeeEntity,
             @RequestHeader("Token") String token,
             @RequestHeader("Alternates") String parser) throws HttpException {
-        final UserEntity userEntity = sessionManager.authorize(token);
+        final UserEntity userEntity = sessionManager.validateByToken(token);
         if (!userEntity.hasWritePermission())
             throw new ForbiddenException();
 
@@ -95,7 +96,7 @@ public class EmployeeController {
             @RequestBody String rawEmployeeEntity,
             @RequestHeader("Token") String token,
             @RequestHeader("Alternates") String parser) throws HttpException {
-        final UserEntity userEntity = sessionManager.authorize(token);
+        final UserEntity userEntity = sessionManager.validateByToken(token);
         if (!userEntity.hasEditPermission())
             throw new ForbiddenException();
 
@@ -117,7 +118,7 @@ public class EmployeeController {
             @RequestBody String rawEmployeeEntity,
             @RequestHeader("Token") String token,
             @RequestHeader("Alternates") String parser) throws HttpException {
-        final UserEntity userEntity = sessionManager.authorize(token);
+        final UserEntity userEntity = sessionManager.validateByToken(token);
         if (!userEntity.hasWritePermission())
             throw new ForbiddenException();
 

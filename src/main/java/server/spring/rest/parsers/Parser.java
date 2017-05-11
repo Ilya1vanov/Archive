@@ -27,18 +27,18 @@ import org.xml.sax.SAXException;
 public abstract class Parser {
     static final Logger log = Logger.getLogger(Parser.class);
 
-    private XMLValidator xmlValidator;
+    public Parser() {
 
-    Parser() {}
+    }
 
-    @Autowired
-    public Parser(XMLValidator xmlValidator) {
-        this.xmlValidator = xmlValidator;
+    public final <T> T parse(String rawData, Class<T> tClass, Schema schema) throws Exception {
+        Source xmlSource = new StreamSource(new StringReader(rawData));
+        Validator validator = schema.newValidator();
+        validator.validate(xmlSource);
+        return parse(rawData, tClass);
     }
 
     public final <T> T parse(String rawData, Class<T> tClass) throws Exception {
-        Source xmlSource = new StreamSource(new StringReader(rawData));
-        xmlValidator.validate(xmlSource);
         return parseInner(rawData, tClass);
     }
 
@@ -54,26 +54,6 @@ public abstract class Parser {
     }
 
     protected abstract Source getSource(Reader reader) throws Exception;
-
-    /**
-     * @author Ilya Ivanov
-     */
-    private static class XMLValidator {
-        private Schema schema;
-
-        @Autowired
-        public XMLValidator(File schema) throws SAXException {
-            SchemaFactory schemaFactory = SchemaFactory
-                    .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-            this.schema = schemaFactory.newSchema(schema);
-        }
-
-
-        void validate(Source source) throws IOException, SAXException {
-            Validator validator = schema.newValidator();
-            validator.validate(source);
-        }
-    }
 
     public static class LogValidationEventHandler implements ValidationEventHandler {
         public boolean handleEvent(ValidationEvent event) {

@@ -1,6 +1,4 @@
-package server.spring.rest.protocol.exception;
-
-import org.apache.log4j.Logger;
+package server.spring.rest.exception;
 
 /**
  * @author Ilya Ivanov
@@ -11,5 +9,9 @@ public class HttpException extends Exception {
 
     public HttpException(String message) {
         super(message);
+    }
+
+    public HttpException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

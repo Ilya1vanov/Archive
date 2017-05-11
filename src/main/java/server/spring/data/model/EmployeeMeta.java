@@ -14,7 +14,7 @@ import javax.xml.bind.annotation.XmlTransient;
  */
 @Embeddable
 @XmlRootElement
-public class EmployeeMeta {
+public class EmployeeMeta implements Identifiable<Long> {
     @Transient
     @XmlTransient
     private Long id;
@@ -43,6 +43,7 @@ public class EmployeeMeta {
         this.id = id;
     }
 
+    @Override
     public Long getId() {
         return id;
     }
@@ -67,5 +68,20 @@ public class EmployeeMeta {
     public void afterUnmarshal(Unmarshaller unmarshaller, Object parent) {
         Employee employee = (Employee) parent;
         this.id = ((Employee) parent).getId();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        EmployeeMeta that = (EmployeeMeta) o;
+
+        return getId() != null ? getId().equals(that.getId()) : that.getId() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return getId() != null ? getId().hashCode() : 0;
     }
 }
