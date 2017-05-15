@@ -1,4 +1,4 @@
-package server.spring.rest.dispatcher;
+package server.spring.rest.dispatcher.serializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,7 +7,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -112,6 +111,8 @@ abstract class HttpSerializer<T extends HttpEntity> implements Serializable, App
             JAXBContext jaxbContext = JAXBContext.newInstance(aClass);
             final Marshaller marshaller = jaxbContext.createMarshaller();
 
+            if (body instanceof Employee)
+                marshaller.setSchema(employeeSchema);
             StringWriter sw = new StringWriter();
             marshaller.marshal(body, sw);
             return sw.toString();
@@ -138,7 +139,8 @@ abstract class HttpSerializer<T extends HttpEntity> implements Serializable, App
             final Parser parser = (Parser) context.getBean(parserType + "Parser");
             if (aClass.isAssignableFrom(Employee.class))
                 body = parser.parse(data, aClass, employeeSchema);
-            body = parser.parse(data, aClass);
+            else
+                body = parser.parse(data, aClass);
         } catch (Exception e) {
             throw new UnprocessableEntityException("Error while deserialization " + aClass + " from XML with " + parserType, e);
         }

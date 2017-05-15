@@ -6,7 +6,7 @@
 
 
 
-    <!--<bean id="httpSerializer" class="server.spring.rest.dispatcher.HttpSerializer">-->
+    <!--<bean id="httpSerializer" claserver.spring.rest.dispatcher.serializer.HttpSerializerizer">-->
         <!--<property name="employeeSchema" value="file:xsd/employee.xsd"/>-->
     <!--</bean>-->
     <!--<context:load-time-weaver aspectj-weaving="autodetect"/>-->

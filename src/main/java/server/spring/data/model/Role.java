@@ -39,4 +39,8 @@ public enum Role {
     public boolean hasAdminPermission() {
         return (permissions & ADMINISTRATE) != 0;
     }
+
+    public boolean hasPermission(Role role) {
+        return permissions >= role.getPermissions();
+    }
 }

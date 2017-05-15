@@ -1,28 +1,17 @@
 package client.view;
 
 import client.Client;
-import javafx.scene.control.ComboBox;
-import org.apache.log4j.Logger;
+import client.controller.Controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import server.spring.data.model.Role;
-import server.spring.data.model.UserEntity;
 
-import java.awt.EventQueue;
+import java.awt.*;
 import javax.annotation.PostConstruct;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
-import java.awt.Rectangle;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Insets;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.stream.Stream;
 
 /**
  * @author Ilya Ivanov
@@ -41,7 +30,15 @@ public class View {
 
     @Autowired private JTextField addressLineUrl;
 
+    @Autowired private JPanel mainPanel;
+
+    @Autowired private CardLayout mainPanelLayout;
+
     @Autowired private JList<Object> mainList;
+
+    @Autowired private UserForm userForm;
+
+    @Autowired private EmployeeForm employeeForm;
 
     @Autowired private JLabel statusLine;
 
@@ -69,13 +66,25 @@ public class View {
         return mainList;
     }
 
+    public UserForm getUserForm() {
+        return userForm;
+    }
+
+    public EmployeeForm getEmployeeForm() {
+        return employeeForm;
+    }
+
     public JLabel getStatusLine() {
         return statusLine;
     }
 
+    public void switchTo(String componentName) {
+        mainPanelLayout.show(mainPanel, componentName);
+    }
+
     @Bean
-    public JFrame mainFrame(
-            JList<Object> mainList, JComboBox<String> parserComboBox,
+    private JFrame mainFrame(
+            JPanel mainPanel, JComboBox<String> parserComboBox,
             JMenuBar menuBar, JPanel addressPanel,
             JLabel statusLineBase, JLabel statusLine, JLabel userLine
     ) {
@@ -88,7 +97,7 @@ public class View {
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainFrame.getContentPane().setLayout(null);
 
-        mainFrame.getContentPane().add(mainList);
+        mainFrame.getContentPane().add(mainPanel);
         mainFrame.getContentPane().add(menuBar);
         mainFrame.getContentPane().add(parserComboBox);
         mainFrame.getContentPane().add(statusLineBase);
@@ -100,9 +109,35 @@ public class View {
     }
 
     @Bean
-    public JList<Object> mainList(AbstractAction openAction) {
+    private JPanel mainPanel(CardLayout mainPanelLayout, JList<Object> mainList, UserForm userForm, EmployeeForm employeeForm) {
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(mainPanelLayout);
+        mainPanel.setBounds(0, 67, 944, 529);
+        mainPanel.add(new JPanel(), "blank");
+        mainPanel.add(mainList, "listPanel");
+        mainPanel.add(userForm.getPanel(), "userForm");
+        mainPanel.add(employeeForm.getPanel(), "employeeForm");
+        return mainPanel;
+    }
+
+    @Bean
+    private CardLayout mainPanelLayout() {
+        return new CardLayout();
+    }
+
+    @Bean
+    private UserForm userForm(AbstractAction editAction, AbstractAction createAction, AbstractAction deleteAction, AbstractAction requestAction) {
+        return new UserForm(editAction, createAction, deleteAction, requestAction);
+    }
+
+    @Bean
+    private EmployeeForm employeeForm(AbstractAction editAction, AbstractAction createAction, AbstractAction deleteAction, AbstractAction requestAction) {
+        return new EmployeeForm(editAction, createAction, deleteAction, requestAction);
+    }
+
+    @Bean
+    private JList<Object> mainList(AbstractAction openAction, JPopupMenu mainListPopup) {
         JList<Object> list = new JList<>();
-        list.setBounds(0, 67, 944, 529);
         list.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent evt) {
                 JList list = (JList)evt.getSource();
@@ -114,46 +149,29 @@ public class View {
                 }
             }
         });
+        list.setComponentPopupMenu(mainListPopup);
         return list;
     }
 
     @Bean
-    public JMenuBar menuBar(JMenu editMenu, JMenu userMenu) {
+    private JMenuBar menuBar(JMenu userMenu) {
         JMenuBar menuBar = new JMenuBar();
         menuBar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         menuBar.setMargin(new Insets(0, 15, 0, 0));
         menuBar.setBounds(0, 0, 944, 21);
-        menuBar.add(editMenu);
         menuBar.add(userMenu);
         return  menuBar;
     }
     
     @Bean
-    public JMenu editMenu(AbstractAction openAction, AbstractAction editAction, AbstractAction deleteAction) {
-        JMenu editMenu = new JMenu("Edit");
-        editMenu.setMargin(new Insets(0, 20, 0, 20));
-
-        JMenuItem mntmOpen = new JMenuItem(openAction);
-        editMenu.add(mntmOpen);
-
-        JMenuItem mntmEdit = new JMenuItem(editAction);
-        editMenu.add(mntmEdit);
-
-        JMenuItem mntmDelete = new JMenuItem(deleteAction);
-        editMenu.add(mntmDelete);
-
-        return editMenu;
-    }
-    
-    @Bean
-    public JMenu userMenu(AbstractAction signInAction, AbstractAction signOutAction, AbstractAction signUpAction) {
+    private JMenu userMenu(Controller.SignActionBase signInAction, AbstractAction signOutRequestAction, Controller.SignActionBase signUpAction) {
         JMenu userMenu = new JMenu("User");
         userMenu.setMargin(new Insets(0, 20, 0, 20));
 
         JMenuItem mntmSignIn = new JMenuItem(signInAction);
         userMenu.add(mntmSignIn);
 
-        JMenuItem mntmSignOut = new JMenuItem(signOutAction);
+        JMenuItem mntmSignOut = new JMenuItem(signOutRequestAction);
         userMenu.add(mntmSignOut);
 
         JMenuItem mntmSignUp = new JMenuItem(signUpAction);
@@ -163,7 +181,7 @@ public class View {
     }
 
     @Bean
-    public JPanel addressPanel(JLabel addressLineBase, JTextField addressLineUrl, JButton updateButton) {
+    private JPanel addressPanel(JLabel addressLineBase, JTextField addressLineUrl, JButton updateButton) {
         JPanel panel = new JPanel();
         panel.setBorder(new LineBorder(new Color(0, 0, 0), 1, true));
         panel.setBackground(Color.LIGHT_GRAY);
@@ -178,7 +196,7 @@ public class View {
     }
 
     @Bean
-    public JButton updateButton(AbstractAction updateAction) {
+    private JButton updateButton(AbstractAction updateAction) {
         JButton updateButton = new JButton("");
         updateButton.setIcon(new ImageIcon(View.class.getResource("/com/sun/javafx/scene/web/skin/Undo_16x16_JFX.png")));
         updateButton.setBounds(548, 0, 31, 30);
@@ -190,7 +208,7 @@ public class View {
     }
     
     @Bean
-    public JLabel addressLineBase() {
+    private JLabel addressLineBase() {
         JLabel addressLineBase = new JLabel("http://" + client.getHost() + ":" + client.getPort() + "/");
         addressLineBase.setBounds(10, 0, 173, 30);
         addressLineBase.setFont(new Font("Sitka Text", Font.PLAIN, 16));
@@ -198,7 +216,7 @@ public class View {
     }
     
     @Bean
-    public JTextField addressLineUrl(AbstractAction requestAction) {
+    private JTextField addressLineUrl(AbstractAction requestAction) {
         JTextField addressLineUrl = new JTextField();
         addressLineUrl.setBorder(null);
         addressLineUrl.setBounds(182, 1, 209, 28);
@@ -212,7 +230,7 @@ public class View {
     }
 
     @Bean
-    public JComboBox<String> parserComboBox() {
+    private JComboBox<String> parserComboBox() {
         JComboBox<String> parserComboBox = new JComboBox<>();
         parserComboBox.setBounds(607, 26, 142, 30);
         parserComboBox.addItem("SAX");
@@ -225,7 +243,7 @@ public class View {
     }
 
     @Bean
-    public JLabel statusLineBase() {
+    private JLabel statusLineBase() {
         JLabel statusLineBase = new JLabel("Status:");
         statusLineBase.setFont(new Font("Sitka Text", Font.BOLD, 13));
         statusLineBase.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -234,7 +252,7 @@ public class View {
     }
 
     @Bean
-    public JLabel statusLine() {
+    private JLabel statusLine() {
         JLabel statusLine = new JLabel("Connecting...");
         statusLine.setFont(new Font("Sitka Text", Font.PLAIN, 13));
         statusLine.setBounds(63, 596, 881, 25);
@@ -242,7 +260,7 @@ public class View {
     }
 
     @Bean
-    public JLabel userLine() {
+    private JLabel userLine() {
         JLabel userLine = new JLabel("Unauthorized");
         userLine.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         userLine.setFont(new Font("Sitka Text", Font.ITALIC, 18));

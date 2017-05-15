@@ -49,15 +49,17 @@ public class SessionManager {
             if (split.length != 2)
                 throw new BadRequestException("Wrong authorization header. Right format \"login:passwordInSHA-256\"");
 
-            if (path.equals(LoginController.signInPath)) { // sign in
-                signIn(split[0], split[1]);
-            } else if (path.equals(LoginController.signUpPath)) { // sign up
-                signUp(split[0], split[1]);
-            } else
-                throw new BadRequestException("");
+            switch (path) {
+                case LoginController.signInPath:  // sign in
+                    signIn(split[0], split[1]);
+                    break;
+                case LoginController.signUpPath:  // sign up
+                    signUp(split[0], split[1]);
+                    break;
+                default:
+            }
         } else if (tokens != null && !tokens.isEmpty()) { // existed session
             final String token = tokens.get(0);
-
             if (path.equals(LoginController.signOutPath)) {// sign out
                 endSession(token);
             } else {
@@ -109,7 +111,7 @@ public class SessionManager {
             sessions.put(token, byLoginAndPassword);
             authToken.put(login + ":" + password, token);
         } else
-            throw new ForbiddenException();
+            throw new ForbiddenException("No user found");
     }
 
     private void signUp(String login, String password) throws HttpException {

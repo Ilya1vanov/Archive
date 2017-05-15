@@ -21,7 +21,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/test/resources" type="java-test-resource" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="1.8 (1)" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Maven: org.springframework:spring-beans:4.3.7.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-core:4.3.7.RELEASE" level="project" />
@@ -121,5 +121,7 @@
     <orderEntry type="library" name="Maven: com.javaslang:javaslang:1.2.3" level="project" />
     <orderEntry type="library" name="Maven: io.javaslang:javaslang:2.0.5" level="project" />
     <orderEntry type="library" name="Maven: io.javaslang:javaslang-match:2.0.5" level="project" />
+    <orderEntry type="library" name="Maven: com.jgoodies:jgoodies-forms:1.9.0" level="project" />
+    <orderEntry type="library" name="Maven: com.jgoodies:jgoodies-common:1.8.1" level="project" />
   </component>
 </module>

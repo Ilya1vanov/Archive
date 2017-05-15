@@ -27,26 +27,18 @@ import org.xml.sax.SAXException;
 public abstract class Parser {
     static final Logger log = Logger.getLogger(Parser.class);
 
-    public Parser() {
+    public Parser() {}
 
+    public final <T> T parse(String rawData, Class<T> tClass) throws Exception {
+        return parse(rawData, tClass, null);
     }
 
     public final <T> T parse(String rawData, Class<T> tClass, Schema schema) throws Exception {
-        Source xmlSource = new StreamSource(new StringReader(rawData));
-        Validator validator = schema.newValidator();
-        validator.validate(xmlSource);
-        return parse(rawData, tClass);
-    }
-
-    public final <T> T parse(String rawData, Class<T> tClass) throws Exception {
-        return parseInner(rawData, tClass);
-    }
-
-    private  <T> T parseInner(String rawData, Class<T> tClass) throws Exception {
         // create JAXBSettings context and initializing Unmarshaller
         JAXBContext jaxbContext = JAXBContext.newInstance(tClass);
         Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
         jaxbUnmarshaller.setEventHandler(new LogValidationEventHandler());
+        jaxbUnmarshaller.setSchema(schema);
 
         final Source source = getSource(new StringReader(rawData));
 

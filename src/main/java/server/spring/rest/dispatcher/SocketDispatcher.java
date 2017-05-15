@@ -10,6 +10,8 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import server.spring.rest.dispatcher.serializer.RequestEntitySerializer;
+import server.spring.rest.dispatcher.serializer.ResponseEntitySerializer;
 import server.spring.rest.mapping.HandlerMapping;
 import server.spring.rest.exception.UnprocessableEntityException;
 import server.spring.rest.session.SessionManager;

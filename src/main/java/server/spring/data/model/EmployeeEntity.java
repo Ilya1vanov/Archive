@@ -1,15 +1,11 @@
 package server.spring.data.model;
 
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
-import org.springframework.util.StreamUtils;
-
 import javax.persistence.*;
-import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import java.io.*;
-import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.zip.*;
 
 /**
@@ -42,9 +38,9 @@ public class EmployeeEntity {
         setData(raw);
     }
 
-    public EmployeeEntity(Employee employee, String raw) throws IOException {
+    public EmployeeEntity(Employee employee) throws IOException, JAXBException {
         this.employeeMeta = employee.getEmployeeMeta();
-        setData(raw);
+        setData(toXML(employee));
     }
 
     public Long getId() {
@@ -53,6 +49,10 @@ public class EmployeeEntity {
 
     public EmployeeMeta getEmployeeMeta() {
         return employeeMeta;
+    }
+
+    public void setEmployeeMeta(EmployeeMeta employeeMeta) {
+        this.employeeMeta = employeeMeta;
     }
 
     private void setData(String raw) throws IOException {
@@ -71,6 +71,19 @@ public class EmployeeEntity {
         this.data = outputStream.toByteArray();
         log.debug("Original: " + input.length + " B");
         log.debug("Compressed: " + data.length + " B");
+    }
+
+    public void setData(Employee employee) throws JAXBException, IOException {
+        this.setData(toXML(employee));
+    }
+
+    private String toXML(Employee employee) throws JAXBException {
+        JAXBContext jaxbContext = JAXBContext.newInstance(Employee.class);
+        final Marshaller marshaller = jaxbContext.createMarshaller();
+
+        StringWriter sw = new StringWriter();
+        marshaller.marshal(employee, sw);
+        return sw.toString();
     }
 
     /**
@@ -94,6 +107,11 @@ public class EmployeeEntity {
         return new String(output);
     }
 
+    @PostLoad
+    private void initMeta() {
+        employeeMeta.setId(this.id);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -101,14 +119,11 @@ public class EmployeeEntity {
 
         EmployeeEntity that = (EmployeeEntity) o;
 
-        if (getId() != null ? !getId().equals(that.getId()) : that.getId() != null) return false;
-        return getEmployeeMeta() != null ? getEmployeeMeta().equals(that.getEmployeeMeta()) : that.getEmployeeMeta() == null;
+        return getId() != null ? getId().equals(that.getId()) : that.getId() == null;
     }
 
     @Override
     public int hashCode() {
-        int result = getId() != null ? getId().hashCode() : 0;
-        result = 31 * result + (getEmployeeMeta() != null ? getEmployeeMeta().hashCode() : 0);
-        return result;
+        return getId() != null ? getId().hashCode() : 0;
     }
 }

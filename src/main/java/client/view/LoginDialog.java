@@ -1,6 +1,6 @@
 package client.view;
 
-import client.Controller.Controller;
+import client.controller.Controller;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.awt.*;

@@ -19,7 +19,8 @@ public class Model {
 
     private ObjectProperty<RequestEntity> lastGetRequest = new SimpleObjectProperty<>(this, "lastGetRequest");
 
-    // TODO store last http request action
+    private RequestEntity previousGetRequest;
+
     {
         final Session fakeSession = new Session(null, null);
         setSession(fakeSession);
@@ -68,6 +69,11 @@ public class Model {
     }
 
     public void setLastGetRequest(RequestEntity lastGetRequest) {
+        previousGetRequest = getLastGetRequest();
         this.lastGetRequest.set(lastGetRequest);
+    }
+
+    public RequestEntity getPreviousGetRequest() {
+        return previousGetRequest;
     }
 }

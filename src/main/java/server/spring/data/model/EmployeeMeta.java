@@ -2,18 +2,16 @@ package server.spring.data.model;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
-import javax.persistence.Entity;
 import javax.persistence.Transient;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.*;
 
 /**
  * @author Ilya Ivanov
  */
 @Embeddable
 @XmlRootElement
+@XmlAccessorType(value = XmlAccessType.FIELD)
 public class EmployeeMeta implements Identifiable<Long> {
     @Transient
     @XmlTransient
@@ -58,6 +56,18 @@ public class EmployeeMeta implements Identifiable<Long> {
 
     public String getLastName() {
         return lastName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public void setMiddleName(String middleName) {
+        this.middleName = middleName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     @Override
