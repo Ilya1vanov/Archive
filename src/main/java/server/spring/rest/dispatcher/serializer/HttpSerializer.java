@@ -58,8 +58,15 @@ abstract class HttpSerializer<T extends HttpEntity> implements Serializable, App
     /** read flag */
     transient boolean read = false;
 
+    /** employee validation schema */
     private transient Schema employeeSchema;
 
+    /**
+     * Construct new instance of HTTP serializer.
+     * @param headers HTTP headers
+     * @param body HTTP body
+     * @throws UnprocessableEntityException if an IO error occurred
+     */
     HttpSerializer(HttpHeaders headers, Object body) throws UnprocessableEntityException {
         this.headers = headers;
         this.body = body;
@@ -83,6 +90,11 @@ abstract class HttpSerializer<T extends HttpEntity> implements Serializable, App
         }
     }
 
+    /**
+     * Returns HTTP entity with headers and body
+     * @return HTTP entity with headers and body
+     * @throws UnprocessableEntityException if an IO error occurred
+     */
     public T getEntity() throws HttpException {
         if (read)
             try {
@@ -96,8 +108,18 @@ abstract class HttpSerializer<T extends HttpEntity> implements Serializable, App
         return getEntityInner();
     }
 
+    /**
+     * Additional, type-specific calculations.
+     * @return HTTP entity
+     * @throws UnprocessableEntityException if an IO error occurred
+     */
     abstract T getEntityInner() throws HttpException;
 
+    /**
+     * Returns serialized in JSON format.
+     * @return serialized in JSON format.
+     * @throws UnprocessableEntityException if an IO error occurred
+     */
     private String serializeBodyToJSON() throws UnprocessableEntityException {
         try {
             return mapper.writeValueAsString(body);
@@ -106,6 +128,11 @@ abstract class HttpSerializer<T extends HttpEntity> implements Serializable, App
         }
     }
 
+    /**
+     * Returns serialized in XML format.
+     * @return serialized in XML format.
+     * @throws UnprocessableEntityException if an IO error occurred
+     */
     private String serializeBodyToXML() throws UnprocessableEntityException {
         try {
             JAXBContext jaxbContext = JAXBContext.newInstance(aClass);
@@ -121,6 +148,11 @@ abstract class HttpSerializer<T extends HttpEntity> implements Serializable, App
         }
     }
 
+    /**
+     * Returns deserialized object from JSON format.
+     * @return deserialized object from JSON format.
+     * @throws UnprocessableEntityException if an IO error occurred
+     */
     private Object deserializeBodyFromJson() throws UnprocessableEntityException {
         try {
             return mapper.readValue(data, aClass);
@@ -129,6 +161,11 @@ abstract class HttpSerializer<T extends HttpEntity> implements Serializable, App
         }
     }
 
+    /**
+     * Returns deserialized object from XML format.
+     * @return deserialized object from XML format
+     * @throws UnprocessableEntityException if an IO error occurred
+     */
     private Object deserializeBodyFromXML() throws UnprocessableEntityException {
         Object body;
         String parserType = "SAX";
@@ -147,6 +184,10 @@ abstract class HttpSerializer<T extends HttpEntity> implements Serializable, App
         return body;
     }
 
+    /**
+     * Serialize body.
+     * @throws UnprocessableEntityException if an IO error occurred
+     */
     private void serializeBody() throws UnprocessableEntityException {
         if (body == null)
             return;
@@ -162,6 +203,10 @@ abstract class HttpSerializer<T extends HttpEntity> implements Serializable, App
             throw new UnprocessableEntityException(contentType.getType());
     }
 
+    /**
+     * Deserialize body.
+     * @throws UnprocessableEntityException if an IO error occurred
+     */
     private void deserializeBody() throws UnprocessableEntityException {
         if (aClass == null)
             return;
@@ -196,11 +241,12 @@ abstract class HttpSerializer<T extends HttpEntity> implements Serializable, App
         this.employeeSchema = schemaFactory.newSchema(file);
     }
 
+    /** application context aware. not autowire, cause of instantiating via java deserializer */
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.context = applicationContext;
         try {
-            setEmployeeSchema(new File("src/main/resources/xsd/employee.xsd"));
+            setEmployeeSchema(new File("H:\\Dropbox\\CSaN\\4th-semester\\CPP\\epam\\archive\\src\\main\\resources\\xsd\\employee.xsd"));
         } catch (SAXException e) {
             e.printStackTrace();
         }

@@ -1,6 +1,5 @@
 package client.view;
 
-import client.controller.Controller;
 import client.model.Model;
 import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
@@ -19,26 +18,37 @@ import java.util.stream.Stream;
  * @author Ilya Ivanov
  */
 abstract class Form<T extends Identifiable<Long>> {
+    /** object to store in form */
     T object;
 
+    /** common id text field */
     final JTextField id = new JTextField(10);
 
+    /** main panel */
     private final JPanel panel;
 
+    /** constraints violation edit */
     private final JLabel invalidMessage;
 
+    /** edit button */
     private final JButton edit;
 
+    /** create button */
     private final JButton create;
 
+    /** delete button*/
     private final JButton delete;
 
+    /** url request base path */
     private final String url;
 
+    /** */
     @Autowired Model model;
 
+    /** spring applicattion context */
     @Autowired ApplicationContext context;
 
+    /** application view */
     private View view;
 
     Form(AbstractAction editAction, AbstractAction createAction, AbstractAction deleteAction, AbstractAction requestAction, String url) {
@@ -129,6 +139,10 @@ abstract class Form<T extends Identifiable<Long>> {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
     }
 
+    /**
+     * Place UI elements on form
+     * @param builder form builder
+     */
     abstract void build(DefaultFormBuilder builder);
 
     JPanel getPanel() {
@@ -169,22 +183,38 @@ abstract class Form<T extends Identifiable<Long>> {
         setEnable(true);
     }
 
+    /**
+     * @return if form is valid
+     */
     private boolean isValid() {
         final String text = id.getText();
         return isValidInner() && (!text.isEmpty()) && NumberUtils.isNumber(text);
     }
 
-//    abstract boolean checkPermissions();
-
     abstract boolean isValidInner();
 
+    /**
+     * Instantiate edit object from filled fields
+     */
     abstract void finallyEdit();
 
+    /**
+     * Instantiate new object from filled fields
+     */
     abstract void finallyCreate();
 
+    /**
+     * @return true if form is valid
+     */
     abstract void setEnable(boolean enable);
 
+    /**
+     * innner
+     */
     abstract void openInner();
 
+    /**
+     * inner creation routine
+     */
     abstract void createInner();
 }

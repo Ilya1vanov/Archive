@@ -11,12 +11,18 @@ import javax.swing.border.*;
 
 @org.springframework.stereotype.Component
 public class LoginDialog extends JDialog {
+    /** username field */
     private JTextField tfUsername;
 
+    /** password field */
     private JPasswordField pfPassword;
 
+    /** application controller */
     @Autowired private Controller controller;
 
+    /**
+     * @param mainFrame main application
+     */
     @Autowired
     public LoginDialog(JFrame mainFrame) {
         super(mainFrame, "Login", true);
@@ -122,10 +128,12 @@ public class LoginDialog extends JDialog {
         setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
     }
 
+    /** @return username */
     private String getUsername() {
         return tfUsername.getText().trim();
     }
 
+    /** @return password */
     private String getPassword() {
         return new String(pfPassword.getPassword());
     }

@@ -31,6 +31,13 @@ public class RequestEntitySerializer extends HttpSerializer<RequestEntity> {
         this.type = request.getType();
     }
 
+    /**
+     *
+     * @param requestEntity entity to write to stream
+     * @return new Instance of {@code RequestEntitySerializer}, that is created to
+     * be written in output stream
+     * @throws UnprocessableEntityException if an IO error occurred
+     */
     public static RequestEntitySerializer writer(RequestEntity requestEntity) throws UnprocessableEntityException {
         return new RequestEntitySerializer(requestEntity);
     }

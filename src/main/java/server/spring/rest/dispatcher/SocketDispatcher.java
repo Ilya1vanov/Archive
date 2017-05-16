@@ -43,6 +43,9 @@ public class SocketDispatcher implements Runnable {
         this.self = self;
     }
 
+    /**
+     * Main request-response cycle on server-side.
+     */
     @Override
     public void run() {
         try (final ObjectInputStream in = new ObjectInputStream(self.getInputStream());

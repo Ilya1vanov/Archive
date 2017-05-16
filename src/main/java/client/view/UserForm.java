@@ -1,10 +1,8 @@
 package client.view;
 
-import client.http.Session;
 import com.jgoodies.forms.builder.DefaultFormBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import server.spring.data.model.Employee;
 import server.spring.data.model.Role;
 import server.spring.data.model.UserEntity;
 
@@ -14,9 +12,12 @@ import javax.swing.*;
  * @author Ilya Ivanov
  */
 @Component
+@SuppressWarnings("deprecated")
 public class UserForm extends Form<UserEntity> {
+    /** login field */
     private JTextField login;
 
+    /** role field */
     private JComboBox<Role> role;
 
     @Autowired
@@ -24,6 +25,9 @@ public class UserForm extends Form<UserEntity> {
         super(editAction, createAction, deleteAction, requestAction,"/users");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     void build(DefaultFormBuilder builder) {
         login = new JTextField(10);
@@ -63,6 +67,7 @@ public class UserForm extends Form<UserEntity> {
         role.setEnabled(enable);
     }
 
+    /** nothing to open */
     @Override
     void createInner() {
     }

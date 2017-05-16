@@ -27,8 +27,10 @@ import java.util.stream.Collectors;
  */
 @Component
 public class HandlerMapping {
+    /** all available methods of controller */
     private List<ControllerMethod> controllerMethods = Lists.newArrayList();
 
+    /** manager of HTTP sessions */
     private final SessionManager sessionManager;
 
     @Autowired
@@ -45,6 +47,12 @@ public class HandlerMapping {
         }
     }
 
+    /**
+     * Map specified request to controller method
+     * @param request request to map
+     * @return controller's method returned value
+     * @throws Throwable if any error occurred
+     */
     public ResponseEntity handle(RequestEntity<?> request) throws Throwable {
         final List<ControllerMethod> convenienceMethods =
                 controllerMethods.stream().filter(controllerMethod -> controllerMethod.isAppropriate(request))
@@ -79,6 +87,11 @@ public class HandlerMapping {
         return responseEntity;
     }
 
+    /**
+     * Determine return HTTP status based on HTTP request
+     * @param request HTTP request
+     * @return return status
+     */
     private HttpStatus getStatus(RequestEntity request) {
         final HttpMethod method = request.getMethod();
         HttpStatus status;
@@ -98,6 +111,11 @@ public class HandlerMapping {
         return status;
     }
 
+    /**
+     * Determine return HTTP headers based on HTTP request
+     * @param request HTTP request
+     * @return return headers
+     */
     private MultiValueMap<String, String> getHeaders(RequestEntity request) {
         final HttpHeaders requestHeaders = request.getHeaders();
         MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
@@ -118,14 +136,19 @@ public class HandlerMapping {
     }
 
     private class ControllerMethod {
+        /** parent controller object */
         private Object controller;
 
+        /** arrays of available http methods */
         private List<HttpMethod> httpMethods = Lists.newArrayList();
 
+        /** resolver of arguments, corresponding to this method */
         private final ControllerArgumentsResolver controllerArgumentsResolver;
 
+        /** method object */
         private Method method;
 
+        /** all available request paths to this method */
         private List<String> urlPaths = Lists.newArrayList();
 
         ControllerMethod(Object controller, Method method) {
@@ -135,6 +158,7 @@ public class HandlerMapping {
             initialize();
         }
 
+        /** primary initialization */
         private void initialize() {
             final RequestMapping classAnnotation = controller.getClass().getAnnotation(RequestMapping.class);
             final List<String> classPaths = Lists.newArrayList(classAnnotation.value());
@@ -157,14 +181,17 @@ public class HandlerMapping {
                 httpMethods.add(HttpMethod.resolve(requestMethod.name()));
         }
 
+        /** @return parent controller object */
         Object getController() {
             return controller;
         }
 
+        /** @return resolver of arguments, corresponding to this method */
         ControllerArgumentsResolver getControllerArgumentsResolver() {
             return controllerArgumentsResolver;
         }
 
+        /** @return method object */
         Method getMethod() {
             return method;
         }
@@ -177,6 +204,11 @@ public class HandlerMapping {
             return urlPaths.stream().anyMatch(s -> Pattern.matches(s, urlPath));
         }
 
+        /**
+         * Returns true if this method is able to process request; false otherwise
+         * @param request request
+         * @return true if this method is able to process request; false otherwise
+         */
         boolean isAppropriate(RequestEntity request) {
             final String urlPath = request.getUrl().getPath();
             final HttpMethod httpMethod = request.getMethod();
@@ -185,18 +217,25 @@ public class HandlerMapping {
         }
 
         private class ControllerArgumentsResolver {
+            /** method object */
             private final Method method;
 
+            /** method parameters */
             private final List<Parameter> parameters;
 
+            /** body parameter */
             private Parameter requestBodyParameter;
 
+            /** path variable parameters */
             private final List<Parameter> pathVariableParameters = Lists.newArrayList();
 
+            /** request header parameters */
             private final List<Parameter> requestHeaderParameters = Lists.newArrayList();;
 
+            /** url paths of parent controller */
             private final String[] classUrlPaths;
 
+            /** url paths of this method */
             private final String[] methodUrlPaths;
 
             ControllerArgumentsResolver(Method method) {
@@ -207,6 +246,7 @@ public class HandlerMapping {
                 initialize();
             }
 
+            /** primary initialisation */
             private void initialize() {
                 for (Parameter parameter : parameters) {
                     if (parameter.isAnnotationPresent(RequestBody.class)) {
@@ -234,6 +274,12 @@ public class HandlerMapping {
                 }
             }
 
+            /**
+             * Perform arguments resolving
+             * @param request request
+             * @return arrays of objects, corresponding to method invocation arguments
+             * @throws HttpException in case of wrong path variables
+             */
             Object[] resolve(RequestEntity request) throws HttpException {
                 if (parameters.size() == 0)
                     return null;

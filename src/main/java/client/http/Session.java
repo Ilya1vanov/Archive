@@ -9,8 +9,12 @@ import server.spring.data.model.UserEntity;
  * @author Ilya Ivanov
  */
 public class Session {
+    /** current user */
     private UserEntity userEntity;
 
+    /**
+     * validation token
+     */
     private String token;
 
     public Session(UserEntity userEntity, String token) {

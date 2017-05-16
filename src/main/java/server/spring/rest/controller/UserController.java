@@ -20,8 +20,10 @@ import java.util.Objects;
 @RestController
 @RequestMapping("/users")
 public class UserController {
+    /** manager of HTTP sessions */
     private final SessionManager sessionManager;
 
+    /** user repository */
     private final UserEntityRepository userEntityRepository;
 
     @Autowired
@@ -30,6 +32,12 @@ public class UserController {
         this.userEntityRepository = userEntityRepository;
     }
 
+    /**
+     * Returns list of all user entities
+     * @param token validation token
+     * @return list of all user entities
+     * @throws HttpException if some validation error occurred
+     */
     @RequestMapping(method = RequestMethod.GET, produces = "application/json")
     public List<UserEntity> findAll(@RequestHeader("Token") String token) throws HttpException {
         final UserEntity validatedUser = sessionManager.validateByToken(token);
@@ -37,6 +45,13 @@ public class UserController {
         return userEntityRepository.findAll();
     }
 
+    /**
+     * Identificate user and return it
+     * @param token validation token
+     * @param userEntity new user
+     * @return identificate user and return it
+     * @throws HttpException if some validation error occurred
+     */
     @RequestMapping(method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public UserEntity add(@RequestHeader("Token") String token, @RequestBody UserEntity userEntity) throws HttpException {
         final UserEntity validatedUser = sessionManager.validateByToken(token);
@@ -44,6 +59,13 @@ public class UserController {
         return userEntityRepository.save(userEntity);
     }
 
+    /**
+     * Returns requested user entity
+     * @param id requested id
+     * @param token validation token
+     * @return requested user entity
+     * @throws HttpException if some validation error occurred
+     */
     @RequestMapping(path = "/{id}", method = RequestMethod.GET, produces = "application/json")
     public UserEntity findOne(@PathVariable("id") Long id, @RequestHeader("Token") String token) throws HttpException {
         final UserEntity validatedUser = sessionManager.validateByToken(token);
@@ -51,6 +73,14 @@ public class UserController {
         return userEntityRepository.findOne(id);
     }
 
+    /**
+     *
+     * @param id requested id
+     * @param token validation token
+     * @param userEntity user to modify
+     * @return modified user
+     * @throws HttpException if some validation error occurred
+     */
     @RequestMapping(path = "/{id}", method = RequestMethod.PUT, produces = "application/json", consumes = "application/json")
     public UserEntity update(
             @PathVariable("id") Long id,
@@ -65,6 +95,12 @@ public class UserController {
         return userEntityRepository.save(userEntity);
     }
 
+    /**
+     *
+     * @param id requested id
+     * @param token validation token
+     * @throws HttpException if some validation error occurred
+     */
     @RequestMapping(path = "/{id}", method = RequestMethod.DELETE, consumes = "application/json")
     public void delete(@PathVariable("id") Long id, @RequestHeader("Token") String token) throws HttpException {
         final UserEntity validatedUser = sessionManager.validateByToken(token);

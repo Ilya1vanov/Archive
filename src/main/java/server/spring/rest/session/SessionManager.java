@@ -26,6 +26,8 @@ import java.util.Map;
 public class SessionManager {
     /** map: token -> userEntity */
     private Map<String, UserEntity> sessions = Maps.newConcurrentMap();
+
+    /** map: authorization request header -> session token*/
     private Map<String, String> authToken = Maps.newConcurrentMap();
 
     /** user repository */
@@ -36,6 +38,11 @@ public class SessionManager {
         this.userEntityRepository = userEntityRepository;
     }
 
+    /**
+     * This method take control over sign in, sing up and sign out processes.
+     * @param request HTTP request
+     * @throws HttpException if some validation error occurred
+     */
     public void authorize(RequestEntity request) throws HttpException {
         final HttpHeaders headers = request.getHeaders();
 
@@ -71,6 +78,12 @@ public class SessionManager {
             throw new UnauthorizedException("Permission denied");
     }
 
+    /**
+     * Returns user corresponds to the current HTTP session
+     * @param token validation token
+     * @return user corresponds to the current HTTP session
+     * @throws UnauthorizedException if there are no requested mapping
+     */
     public UserEntity validateByToken(String token) throws UnauthorizedException {
         final UserEntity userEntity = sessions.get(token);
         if (userEntity == null)
@@ -78,6 +91,12 @@ public class SessionManager {
         return userEntity;
     }
 
+    /**
+     * Returns user corresponds to the current HTTP session
+     * @param authorization
+     * @return user corresponds to the current HTTP session
+     * @throws UnauthorizedException if there are no requested mapping
+     */
     public UserEntity validateByAuthorization(String authorization) throws UnauthorizedException {
         final UserEntity userEntity = sessions.get(authToken.get(authorization));
         if (userEntity == null)
@@ -85,14 +104,28 @@ public class SessionManager {
         return userEntity;
     }
 
+    /**
+     *
+     * @param authorization
+     * @return
+     */
     public String getTokenByAuthorization(String authorization) {
         return authToken.get(authorization);
     }
 
+    /**
+     *
+     * @param token
+     */
     private void endSession(String token) {
         sessions.remove(token);
     }
 
+    /**
+     *
+     * @param obj
+     * @return
+     */
     private String generateToken(Object obj) {
         try {
             BigInteger hash = new BigInteger(1, MessageDigest.getInstance("SHA-256").digest(obj.toString().getBytes()));
@@ -103,6 +136,12 @@ public class SessionManager {
         }
     }
 
+    /**
+     *
+     * @param login
+     * @param password
+     * @throws ForbiddenException
+     */
     private void signIn(String login, String password) throws ForbiddenException {
         final UserEntity byLoginAndPassword = userEntityRepository.findByLoginAndPassword(login, password);
 
@@ -114,6 +153,12 @@ public class SessionManager {
             throw new ForbiddenException("No user found");
     }
 
+    /**
+     *
+     * @param login
+     * @param password
+     * @throws HttpException
+     */
     private void signUp(String login, String password) throws HttpException {
         final UserEntity byLoginAndPassword = userEntityRepository.findByLogin(login);
         if (byLoginAndPassword != null)

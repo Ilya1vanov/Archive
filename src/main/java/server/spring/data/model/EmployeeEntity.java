@@ -55,6 +55,11 @@ public class EmployeeEntity {
         this.employeeMeta = employeeMeta;
     }
 
+    /**
+     * Zip data into Bloc.
+     * @param raw raw string data
+     * @throws IOException if an IO errors occurs
+     */
     private void setData(String raw) throws IOException {
         final byte[] input = raw.getBytes();
         Deflater deflater = new Deflater();

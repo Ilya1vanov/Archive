@@ -1,38 +1,44 @@
 package server.spring.rest.parsers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.ValidationEventHandler;
 import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
-import java.io.File;
-import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import org.apache.log4j.Logger;
-import org.xml.sax.SAXException;
 
 /**
  * @author Ilya Ivanov
  */
 @Component
 public abstract class Parser {
+    /** log4j logger */
     static final Logger log = Logger.getLogger(Parser.class);
 
     public Parser() {}
 
+    /**
+     * {@code schema} is defaults to null
+     * @see #parse(String, Class, Schema)
+     */
     public final <T> T parse(String rawData, Class<T> tClass) throws Exception {
         return parse(rawData, tClass, null);
     }
 
+    /**
+     *
+     * @param rawData raw string data
+     * @param tClass class to instantiate
+     * @param schema validation schema; may be null
+     * @param <T> returned class
+     * @return new instance of {@code tClass}
+     * @throws Exception if any error occurred
+     */
     public final <T> T parse(String rawData, Class<T> tClass, Schema schema) throws Exception {
         // create JAXBSettings context and initializing Unmarshaller
         JAXBContext jaxbContext = JAXBContext.newInstance(tClass);
@@ -45,8 +51,16 @@ public abstract class Parser {
         return (T) jaxbUnmarshaller.unmarshal(source);
     }
 
+    /**
+     * @param reader input raw source
+     * @return structured source date to parse
+     * @throws Exception if any IO error occurred
+     */
     protected abstract Source getSource(Reader reader) throws Exception;
 
+    /**
+     * JAXB logger
+     */
     public static class LogValidationEventHandler implements ValidationEventHandler {
         public boolean handleEvent(ValidationEvent event) {
             log.error("\nEVENT");
